@@ -1,0 +1,251 @@
+{
+  "info": {
+    "name": "Employee Leave Management API",
+    "description": "Reporting, dashboard, and analytics endpoints with JWT auth.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5300" },
+    { "key": "token", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  var json = pm.response.json();",
+                  "  pm.collectionVariables.set('token', json.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userName\": \"admin\",\n  \"password\": \"Admin@123\"\n}"
+            },
+            "url": "{{baseUrl}}/api/Auth/login"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "KPI Summary",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/Dashboard"
+          }
+        },
+        {
+          "name": "Department Leaves",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/Dashboard/department-leaves?year=2026"
+          }
+        },
+        {
+          "name": "Monthly Trend",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/Dashboard/monthly-trend?year=2026"
+          }
+        },
+        {
+          "name": "Pending Summary",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/Dashboard/pending-summary"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reports",
+      "item": [
+        {
+          "name": "Employee Leave Summary",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/Report/employee-summary?year=2026"
+          }
+        },
+        {
+          "name": "Monthly Utilization",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/Report/monthly-utilization?year=2026"
+          }
+        },
+        {
+          "name": "Department Statistics",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/Report/department-statistics"
+          }
+        },
+        {
+          "name": "Pending Requests",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/Report/pending"
+          }
+        },
+        {
+          "name": "Export Employee CSV",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{ \"year\": 2026 }" },
+            "url": "{{baseUrl}}/api/Report/export/employee-csv"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Analytics",
+      "item": [
+        {
+          "name": "Leave Trend",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/Analytics/leave-trend?year=2026"
+          }
+        },
+        {
+          "name": "Department Comparison",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/Analytics/department-comparison?year=2026"
+          }
+        },
+        {
+          "name": "Frequent Leave Pattern",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/Analytics/frequent-leave-pattern"
+          }
+        },
+        {
+          "name": "Forecast Utilization",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/Analytics/forecast-leave-utilization"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Data Warehouse",
+      "item": [
+        {
+          "name": "Forecast Demand",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/DataWarehouse/forecast-demand"
+          }
+        },
+        {
+          "name": "Burnout Risk",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/DataWarehouse/burnout-risk?lookbackDays=180"
+          }
+        },
+        {
+          "name": "Peak Periods",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/DataWarehouse/peak-periods?lookbackYears=3&topN=10"
+          }
+        },
+        {
+          "name": "Month-over-Month Trend",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/DataWarehouse/month-over-month-trend?year=2026"
+          }
+        },
+        {
+          "name": "Department Heatmap",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/DataWarehouse/department-heatmap?year=2026"
+          }
+        },
+        {
+          "name": "Top Leave Types",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/DataWarehouse/top-leave-types?year=2026&topN=5"
+          }
+        },
+        {
+          "name": "ETL Run Log",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/DataWarehouse/etl-log?topN=20"
+          }
+        },
+        {
+          "name": "Export Forecast Excel",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{}" },
+            "url": "{{baseUrl}}/api/DataWarehouse/export/forecast-demand-excel"
+          }
+        },
+        {
+          "name": "Export Burnout Risk CSV",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{ \"lookbackDays\": 180 }" },
+            "url": "{{baseUrl}}/api/DataWarehouse/export/burnout-risk-csv"
+          }
+        }
+      ]
+    }
+  ]
+}

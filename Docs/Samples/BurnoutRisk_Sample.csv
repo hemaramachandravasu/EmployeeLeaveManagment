@@ -1,0 +1,4 @@
+EmployeeCode,EmployeeName,Department,TotalLeaves,TotalDays,AvgDaysPerLeave,MaxConsecutiveDays,LeavesLast90Days,BurnoutRiskLevel,RiskReason
+EMP001,John Smith,Engineering,2,5,2.50,3,1,Low,Within normal range
+EMP002,Jane Doe,Human Resources,1,2,2.00,2,1,Low,Within normal range
+EMP003,Bob Wilson,Finance,1,1,1.00,1,0,Low,Within normal range

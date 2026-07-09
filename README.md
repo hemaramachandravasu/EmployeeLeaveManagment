@@ -1,0 +1,108 @@
+# Employee Leave Management System
+
+ASP.NET Core Web API for employee leave management with **reporting**, **analytics**, **dashboard feeds**, JWT authentication, and a consolidated SQL Server deployment package.
+
+## Quick Start
+
+### 1. Deploy database
+```powershell
+sqlcmd -S localhost -E -C -i MASTER_DEPLOY.sql
+```
+
+### 2. Run API
+```powershell
+cd EmployeeLeaveManagment
+dotnet run
+```
+
+### 3. Open Swagger
+http://localhost:5300/swagger
+
+### 4. Login (JWT)
+```http
+POST /api/Auth/login
+{
+  "userName": "admin",
+  "password": "Admin@123"
+}
+```
+
+Copy the `token` from the response. In Swagger, click **Authorize** and enter: `Bearer <your-token>`
+
+## Architecture
+
+```
+Controller → Service → Repository (ADO.NET) → SQL Server stored procedures
+```
+
+## Key API Areas
+
+| Area | Base route | Auth |
+|------|------------|------|
+| Auth | `/api/Auth` | Public login |
+| Reports | `/api/Report` | Admin JWT |
+| Dashboard | `/api/Dashboard` | Admin JWT |
+| Analytics | `/api/Analytics` | Admin JWT |
+| Employees | `/api/Employee` | Open |
+| Leaves | `/api/Leave` | Open |
+| Departments | `/api/Department` | Open |
+
+## Reporting Endpoints (Task 5)
+
+| Report | GET | POST |
+|--------|-----|------|
+| Employee Leave Summary | `/api/Report/employee-summary` | same path |
+| Monthly Utilization | `/api/Report/monthly-utilization` | same path |
+| Department Statistics | `/api/Report/department-statistics` | same path |
+| Pending Requests | `/api/Report/pending` | — |
+
+Exports (POST, Admin JWT):
+- `/api/Report/export/employee-excel`
+- `/api/Report/export/department-excel`
+- `/api/Report/export/employee-csv`
+- `/api/Report/export/department-csv`
+
+## Dashboard Feeds
+
+| Endpoint | Purpose |
+|----------|---------|
+| `GET /api/Dashboard` | KPI summary counts |
+| `GET /api/Dashboard/department-leaves?year=2026` | Department chart data |
+| `GET /api/Dashboard/monthly-trend?year=2026` | Monthly trend chart data |
+| `GET /api/Dashboard/pending-summary` | Pending/approved/rejected snapshot |
+
+## Database
+
+| Script | Purpose |
+|--------|---------|
+| `MASTER_DEPLOY.sql` | Schema, stored procedures, seed data |
+| `Scripts/Security/SECURITY_DEPLOY.sql` | DDM, RLS, roles, health monitoring |
+
+```powershell
+sqlcmd -S localhost -E -C -i MASTER_DEPLOY.sql
+sqlcmd -S localhost -E -C -i Scripts\Security\SECURITY_DEPLOY.sql
+```
+
+Default admin: `admin` / `Admin@123`  
+Security details: [FINAL_DATABASE_SECURITY_DOCUMENTATION.md](Docs/FINAL_DATABASE_SECURITY_DOCUMENTATION.md)
+
+## Tests
+
+```powershell
+dotnet test
+```
+
+## Documentation
+
+- [Final Project Documentation](Docs/FINAL_PROJECT_DOCUMENTATION.md)
+- [Reporting & Audit Design](Docs/Reporting-Audit-Design.md)
+- [Postman Collection](Docs/EmployeeLeaveManagement.postman_collection.json)
+
+## Tech Stack
+
+- ASP.NET Core 10 Web API
+- ADO.NET + SQL Server
+- JWT Bearer authentication
+- Swagger / OpenAPI
+- ClosedXML (Excel export)
+- xUnit tests

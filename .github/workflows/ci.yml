@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore EmployeeLeaveManagment/EmployeeLeaveManagment.csproj
+
+      - name: Build
+        run: |
+          dotnet build EmployeeLeaveManagment/EmployeeLeaveManagment.csproj -c Release
+          dotnet build EmployeeLeaveManagment.Tests/EmployeeLeaveManagment.Tests.csproj -c Release
+
+      - name: Unit tests
+        run: dotnet test EmployeeLeaveManagment.Tests/EmployeeLeaveManagment.Tests.csproj -c Release --filter "Category!=Integration"

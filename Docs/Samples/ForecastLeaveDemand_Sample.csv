@@ -1,0 +1,10 @@
+Department,ForecastYear,ForecastMonth,ForecastMonthName,ForecastedLeaveCount,ForecastedLeaveDays,Methodology
+Engineering,2026,8,August,2,4,Rolling 12-month average
+Engineering,2026,9,September,2,4,Rolling 12-month average
+Engineering,2026,10,October,2,4,Rolling 12-month average
+Finance,2026,8,August,1,2,Rolling 12-month average
+Finance,2026,9,September,1,2,Rolling 12-month average
+Finance,2026,10,October,1,2,Rolling 12-month average
+Human Resources,2026,8,August,1,2,Rolling 12-month average
+Human Resources,2026,9,September,1,2,Rolling 12-month average
+Human Resources,2026,10,October,1,2,Rolling 12-month average

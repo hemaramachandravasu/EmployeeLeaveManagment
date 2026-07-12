@@ -112,11 +112,13 @@ CREATE TABLE dbo.Users (
     PasswordHash NVARCHAR(500) NOT NULL,
     Email        NVARCHAR(320) NOT NULL,
     RoleId       INT NOT NULL,
+    EmployeeId   INT NULL,
     IsActive     BIT NOT NULL CONSTRAINT DF_Users_IsActive DEFAULT (1),
     CreatedDate  DATETIME2 NOT NULL CONSTRAINT DF_Users_CreatedDate DEFAULT (SYSUTCDATETIME()),
     ModifiedDate DATETIME2 NULL,
     CONSTRAINT UQ_Users_UserName UNIQUE (UserName),
-    CONSTRAINT FK_Users_Role FOREIGN KEY (RoleId) REFERENCES dbo.Roles(RoleId)
+    CONSTRAINT FK_Users_Role FOREIGN KEY (RoleId) REFERENCES dbo.Roles(RoleId),
+    CONSTRAINT FK_Users_Employee FOREIGN KEY (EmployeeId) REFERENCES dbo.Employees(EmployeeId)
 );
 GO
 
@@ -962,6 +964,10 @@ VALUES
     (N'EMP001', N'Alice', N'Johnson', N'Female', '1990-05-12', N'9000000001', N'alice@company.com', 2, NULL, '2020-01-15', 75000, N'City A'),
     (N'EMP002', N'Bob', N'Smith', N'Male', '1988-09-20', N'9000000002', N'bob@company.com', 2, 1, '2021-03-01', 65000, N'City B'),
     (N'EMP003', N'Carol', N'Lee', N'Female', '1992-11-03', N'9000000003', N'carol@company.com', 1, NULL, '2019-07-10', 55000, N'City C');
+GO
+
+-- Link default admin account to Alice (EMP001) for JWT / RLS claims
+UPDATE dbo.Users SET EmployeeId = 1 WHERE UserName = N'admin' AND EmployeeId IS NULL;
 GO
 
 INSERT INTO dbo.LeaveRequests (EmployeeId, LeaveTypeId, StartDate, EndDate, Reason, Status, ApprovedBy, ApprovedDate)

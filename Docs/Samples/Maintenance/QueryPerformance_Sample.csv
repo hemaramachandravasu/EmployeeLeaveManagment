@@ -1,0 +1,4 @@
+ExecutionCount,TotalElapsedMs,AvgElapsedMs,TotalCpuMs,TotalLogicalReads,LastExecutionTime,QueryText
+1420,850000,598,620000,2400000,2026-07-12 10:15:00Z,SELECT ... FROM LeaveRequests WHERE Status=@Status
+860,410000,476,300000,980000,2026-07-12 10:12:00Z,SELECT ... FROM AuditLogs WHERE ChangedOn>=@From
+320,195000,609,150000,450000,2026-07-12 09:58:00Z,EXEC sp_GetDashboardData

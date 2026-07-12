@@ -1,0 +1,5 @@
+SchemaName,TableName,IndexName,IndexType,FragmentationPercent,PageCount,HealthStatus
+dbo,LeaveRequests,IX_LeaveRequests_Status_StartDate,NONCLUSTERED,34.50,220,Rebuild
+dbo,AuditLogs,IX_AuditLogs_Table_ChangedOn,NONCLUSTERED,18.25,160,Reorganize
+dbo,Employees,IX_Employees_DepartmentId,NONCLUSTERED,4.10,80,Healthy
+dbo,LeaveRequests,PK__LeaveRequests,CLUSTERED,2.00,310,Healthy

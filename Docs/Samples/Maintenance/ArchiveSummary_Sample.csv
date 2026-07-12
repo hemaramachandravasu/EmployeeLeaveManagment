@@ -1,0 +1,5 @@
+EntityName,RunCount,SuccessCount,FailedCount,TotalRowsArchived,FirstRun,LastRun
+LeaveRequests,3,3,0,1250,2026-04-01 04:00:00Z,2026-07-01 04:00:00Z
+Notifications,3,3,0,840,2026-04-01 04:00:00Z,2026-07-01 04:00:00Z
+AuditLogs,3,2,1,5200,2026-04-01 04:00:00Z,2026-07-01 04:00:00Z
+LeaveBalances,3,3,0,96,2026-04-01 04:00:00Z,2026-07-01 04:00:00Z

@@ -62,14 +62,20 @@ builder.Services.AddSwaggerGen(options =>
         Description = "Reporting, analytics, and dashboard feeds for the Admin portal."
     });
 
-    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    const string bearerSchemeId = "Bearer";
+    options.AddSecurityDefinition(bearerSchemeId, new OpenApiSecurityScheme
     {
         Name = "Authorization",
         Type = SecuritySchemeType.Http,
         Scheme = "bearer",
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
-        Description = "Enter JWT token obtained from POST /api/Auth/login"
+        Description = "Paste the JWT from POST /api/Auth/login. Swagger adds the Bearer prefix automatically."
+    });
+
+    options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
+    {
+        [new OpenApiSecuritySchemeReference(bearerSchemeId, document)] = []
     });
 });
 
@@ -97,6 +103,8 @@ builder.Services.AddScoped<IReportRepository, ReportRepository>();
 builder.Services.AddScoped<IReportService, ReportService>();
 builder.Services.AddScoped<IDataWarehouseRepository, DataWarehouseRepository>();
 builder.Services.AddScoped<IDataWarehouseService, DataWarehouseService>();
+builder.Services.AddScoped<IMaintenanceRepository, MaintenanceRepository>();
+builder.Services.AddScoped<IMaintenanceService, MaintenanceService>();
 builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
 builder.Services.AddScoped<IEmployeeService, EmployeeService>();
 

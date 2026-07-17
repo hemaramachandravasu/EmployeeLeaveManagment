@@ -1,0 +1,4 @@
+﻿BackupRunId,DatabaseName,BackupType,BackupPath,StartTime,EndTime,Status,BackupSizeMB,Verified,DurationSeconds,ErrorMessage
+1,EmployeeLeaveDb,Full,C:\Backup\EmployeeLeaveDb\EmployeeLeaveDb_FULL_20260715_220000.bak,2026-07-15T22:00:00Z,2026-07-15T22:01:12Z,Verified,24.50,True,72,
+2,EmployeeLeaveDb,Log,C:\Backup\EmployeeLeaveDb\EmployeeLeaveDb_LOG_20260715_221500.trn,2026-07-15T22:15:00Z,2026-07-15T22:15:03Z,Verified,0.80,True,3,
+3,EmployeeLeaveDb,Differential,C:\Backup\EmployeeLeaveDb\EmployeeLeaveDb_DIFF_20260716_040000.bak,2026-07-16T04:00:00Z,2026-07-16T04:00:25Z,Success,4.10,False,25,

@@ -246,6 +246,91 @@
           }
         }
       ]
+    },
+    {
+      "name": "Backup Security",
+      "item": [
+        {
+          "name": "Backup Status",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/BackupSecurity/backup-status"
+          }
+        },
+        {
+          "name": "Backup History",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/BackupSecurity/reports/backup-history?daysBack=30"
+          }
+        },
+        {
+          "name": "Recovery Validation",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/BackupSecurity/reports/recovery-validation?daysBack=30"
+          }
+        },
+        {
+          "name": "Security Audit",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/BackupSecurity/reports/security-audit?hoursBack=24"
+          }
+        },
+        {
+          "name": "Database Health",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/BackupSecurity/reports/database-health"
+          }
+        },
+        {
+          "name": "Job Execution History",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/BackupSecurity/reports/job-execution?hoursBack=72"
+          }
+        },
+        {
+          "name": "Ops Alerts",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/BackupSecurity/alerts?daysBack=7"
+          }
+        },
+        {
+          "name": "Export Backup History Excel",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{ \"daysBack\": 30 }" },
+            "url": "{{baseUrl}}/api/BackupSecurity/export/backup-history-excel"
+          }
+        },
+        {
+          "name": "Export Security Audit CSV",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{ \"hoursBack\": 24 }" },
+            "url": "{{baseUrl}}/api/BackupSecurity/export/security-audit-csv"
+          }
+        }
+      ]
     }
   ]
 }

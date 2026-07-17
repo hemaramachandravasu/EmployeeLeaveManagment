@@ -105,6 +105,8 @@ builder.Services.AddScoped<IDataWarehouseRepository, DataWarehouseRepository>();
 builder.Services.AddScoped<IDataWarehouseService, DataWarehouseService>();
 builder.Services.AddScoped<IMaintenanceRepository, MaintenanceRepository>();
 builder.Services.AddScoped<IMaintenanceService, MaintenanceService>();
+builder.Services.AddScoped<IBackupSecurityRepository, BackupSecurityRepository>();
+builder.Services.AddScoped<IBackupSecurityService, BackupSecurityService>();
 builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
 builder.Services.AddScoped<IEmployeeService, EmployeeService>();
 

@@ -1,0 +1,3 @@
+﻿ValidationId,DatabaseName,ValidationType,BackupPath,TargetPointInTime,StartTime,EndTime,Status,Details,ErrorMessage
+1,EmployeeLeaveDb,VerifyOnly,C:\Backup\EmployeeLeaveDb\EmployeeLeaveDb_FULL_20260715_220000.bak,,2026-07-15T23:00:00Z,2026-07-15T23:00:08Z,Success,VERIFYONLY passed for Full backup.,
+2,EmployeeLeaveDb,RestoreScriptGenerated,,2026-07-15T21:45:00Z,2026-07-16T10:00:00Z,2026-07-16T10:00:01Z,Success,Script generated for target EmployeeLeaveDb_PITR,

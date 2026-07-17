@@ -45,6 +45,7 @@ Controller → Service → Repository (ADO.NET) → SQL Server stored procedures
 | Analytics | `/api/Analytics` | Admin JWT |
 | Data Warehouse | `/api/DataWarehouse` | Admin JWT |
 | Maintenance | `/api/Maintenance` | Admin JWT |
+| Backup & Security Ops | `/api/BackupSecurity` | Admin JWT |
 | Employees | `/api/Employee` | Open |
 | Leaves | `/api/Leave` | Open |
 | Departments | `/api/Department` | Open |
@@ -81,17 +82,22 @@ Exports (POST, Admin JWT):
 | `Scripts/Security/SECURITY_DEPLOY.sql` | DDM, RLS, roles, health monitoring |
 | `Scripts/Maintenance/MAINTENANCE_MASTER_DEPLOY.sql` | Archival, monitoring, maintenance jobs |
 | `Scripts/DataWarehouse/DW_MASTER_DEPLOY.sql` | Analytics warehouse + ETL |
+| `Scripts/BackupSecurity/BACKUP_SECURITY_MASTER_DEPLOY.sql` | Backup automation, DR, ops monitoring |
 
 ```powershell
 sqlcmd -S localhost -E -C -i MASTER_DEPLOY.sql
 sqlcmd -S localhost -E -C -i Scripts\Security\SECURITY_DEPLOY.sql
 sqlcmd -S localhost -E -C -i Scripts\Maintenance\MAINTENANCE_MASTER_DEPLOY.sql
+New-Item -ItemType Directory -Force -Path C:\Backup\EmployeeLeaveDb | Out-Null
+cd Scripts\BackupSecurity
+sqlcmd -S localhost -E -C -i BACKUP_SECURITY_MASTER_DEPLOY.sql
 ```
 
 Default admin: `admin` / `Admin@123`  
 Security details: [FINAL_DATABASE_SECURITY_DOCUMENTATION.md](Docs/FINAL_DATABASE_SECURITY_DOCUMENTATION.md)  
 Maintenance module: [DATABASE_MAINTENANCE_DOCUMENTATION.md](Docs/DATABASE_MAINTENANCE_DOCUMENTATION.md)  
-Data warehouse: [DATA_WAREHOUSE_DOCUMENTATION.md](Docs/DATA_WAREHOUSE_DOCUMENTATION.md)
+Data warehouse: [DATA_WAREHOUSE_DOCUMENTATION.md](Docs/DATA_WAREHOUSE_DOCUMENTATION.md)  
+Backup / DR / Security ops: [BACKUP_SECURITY_DISASTER_RECOVERY_DOCUMENTATION.md](Docs/BACKUP_SECURITY_DISASTER_RECOVERY_DOCUMENTATION.md)
 
 ## Tests
 
@@ -104,6 +110,7 @@ dotnet test
 - [Final Project Documentation](Docs/FINAL_PROJECT_DOCUMENTATION.md)
 - [Database Maintenance Documentation](Docs/DATABASE_MAINTENANCE_DOCUMENTATION.md)
 - [Data Warehouse Documentation](Docs/DATA_WAREHOUSE_DOCUMENTATION.md)
+- [Backup, Security & Disaster Recovery](Docs/BACKUP_SECURITY_DISASTER_RECOVERY_DOCUMENTATION.md)
 - [Reporting & Audit Design](Docs/Reporting-Audit-Design.md)
 - [Postman Collection](Docs/EmployeeLeaveManagement.postman_collection.json)
 - GitHub: https://github.com/hemaramachandravasu/EmployeeLeaveManagment

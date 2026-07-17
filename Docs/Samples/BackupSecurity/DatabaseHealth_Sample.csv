@@ -1,0 +1,2 @@
+﻿DatabaseName,RecoveryModel,StateDesc,TotalSizeMB,ActiveUserSessions,FailedBackupsLast24h,OpenCriticalAlerts,CapturedAtUtc
+EmployeeLeaveDb,FULL,ONLINE,128.00,3,0,0,2026-07-15T21:00:00Z

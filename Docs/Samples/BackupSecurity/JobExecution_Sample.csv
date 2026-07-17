@@ -1,0 +1,4 @@
+﻿JobName,StepId,StepName,RunDateTime,StatusName,RunDuration,MessageText
+ELM_Backup_Full,1,Full Backup,2026-07-15T22:00:00Z,Succeeded,112,The job succeeded.
+ELM_Backup_Log,1,Log Backup,2026-07-15T22:15:00Z,Succeeded,3,The job succeeded.
+ELM_Backup_Validate,1,Verify Last Backup,2026-07-15T23:00:00Z,Succeeded,8,The job succeeded.

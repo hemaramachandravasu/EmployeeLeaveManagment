@@ -47,6 +47,7 @@ Controller → Service → Repository (ADO.NET) → SQL Server stored procedures
 | Maintenance | `/api/Maintenance` | Admin JWT |
 | Backup & Security Ops | `/api/BackupSecurity` | Admin JWT |
 | Optimization & Partitioning | `/api/Optimization` | Admin JWT |
+| Audit Integrity & Compliance | `/api/AuditIntegrity` | Admin JWT |
 | Employees | `/api/Employee` | Open |
 | Leaves | `/api/Leave` | Open |
 | Departments | `/api/Department` | Open |
@@ -85,6 +86,7 @@ Exports (POST, Admin JWT):
 | `Scripts/DataWarehouse/DW_MASTER_DEPLOY.sql` | Analytics warehouse + ETL |
 | `Scripts/BackupSecurity/BACKUP_SECURITY_MASTER_DEPLOY.sql` | Backup automation, DR, ops monitoring |
 | `Scripts/Optimization/OPTIMIZATION_MASTER_DEPLOY.sql` | Partitioning, index optimization, ops analytics |
+| `Scripts/AuditIntegrity/AUDIT_INTEGRITY_MASTER_DEPLOY.sql` | Auditing, integrity checks, compliance reports |
 
 ```powershell
 sqlcmd -S localhost -E -C -i MASTER_DEPLOY.sql
@@ -96,6 +98,9 @@ sqlcmd -S localhost -E -C -i BACKUP_SECURITY_MASTER_DEPLOY.sql
 cd ..\Optimization
 sqlcmd -S localhost -E -C -i OPTIMIZATION_MASTER_DEPLOY.sql
 sqlcmd -S localhost -E -C -i 07_Agent_Jobs.sql
+cd ..\AuditIntegrity
+sqlcmd -S localhost -E -C -i AUDIT_INTEGRITY_MASTER_DEPLOY.sql
+sqlcmd -S localhost -E -C -i 06_Agent_Jobs.sql
 ```
 
 Default admin: `admin` / `Admin@123`  
@@ -103,7 +108,8 @@ Security details: [FINAL_DATABASE_SECURITY_DOCUMENTATION.md](Docs/FINAL_DATABASE
 Maintenance module: [DATABASE_MAINTENANCE_DOCUMENTATION.md](Docs/DATABASE_MAINTENANCE_DOCUMENTATION.md)  
 Data warehouse: [DATA_WAREHOUSE_DOCUMENTATION.md](Docs/DATA_WAREHOUSE_DOCUMENTATION.md)  
 Backup / DR / Security ops: [BACKUP_SECURITY_DISASTER_RECOVERY_DOCUMENTATION.md](Docs/BACKUP_SECURITY_DISASTER_RECOVERY_DOCUMENTATION.md)  
-Optimization / partitioning: [DATABASE_OPTIMIZATION_PARTITIONING_DOCUMENTATION.md](Docs/DATABASE_OPTIMIZATION_PARTITIONING_DOCUMENTATION.md)
+Optimization / partitioning: [DATABASE_OPTIMIZATION_PARTITIONING_DOCUMENTATION.md](Docs/DATABASE_OPTIMIZATION_PARTITIONING_DOCUMENTATION.md)  
+Audit / integrity / compliance: [DATABASE_AUDITING_INTEGRITY_COMPLIANCE_DOCUMENTATION.md](Docs/DATABASE_AUDITING_INTEGRITY_COMPLIANCE_DOCUMENTATION.md)
 
 ## Tests
 
@@ -118,6 +124,7 @@ dotnet test
 - [Data Warehouse Documentation](Docs/DATA_WAREHOUSE_DOCUMENTATION.md)
 - [Backup, Security & Disaster Recovery](Docs/BACKUP_SECURITY_DISASTER_RECOVERY_DOCUMENTATION.md)
 - [Database Optimization, Partitioning & Operational Analytics](Docs/DATABASE_OPTIMIZATION_PARTITIONING_DOCUMENTATION.md)
+- [Database Auditing, Integrity & Compliance](Docs/DATABASE_AUDITING_INTEGRITY_COMPLIANCE_DOCUMENTATION.md)
 - [Reporting & Audit Design](Docs/Reporting-Audit-Design.md)
 - [Postman Collection](Docs/EmployeeLeaveManagement.postman_collection.json)
 - GitHub: https://github.com/hemaramachandravasu/EmployeeLeaveManagment

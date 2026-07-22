@@ -1,0 +1,5 @@
+UserName,ActivityType,ActivityCount,SuccessCount,FailureCount,FirstActivityAt,LastActivityAt
+admin,Login,18,18,0,2026-06-22T08:00:00Z,2026-07-22T09:00:00Z
+admin,Export,9,9,0,2026-06-25T10:00:00Z,2026-07-21T16:00:00Z
+manager1,Approve,22,21,1,2026-06-23T11:00:00Z,2026-07-22T11:30:00Z
+employee1,Apply,7,7,0,2026-07-01T09:00:00Z,2026-07-20T14:00:00Z

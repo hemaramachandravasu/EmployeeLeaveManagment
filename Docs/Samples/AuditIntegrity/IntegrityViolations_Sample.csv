@@ -1,0 +1,4 @@
+ViolationId,RunId,CheckCode,Severity,EntityName,EntityId,EmployeeId,ViolationDetail,DetectedAt,IsResolved,ResolvedAt,ResolvedBy,ResolutionNotes
+101,12,DUPLICATE_OVERLAP,Critical,LeaveRequests,55,3,"Overlapping leave: Request 55 (2026-07-01–2026-07-05) overlaps Request 61 (2026-07-04–2026-07-08) Status=Pending/Approved",2026-07-22T05:00:12Z,False,,,
+102,12,BALANCE_MISMATCH,High,LeaveBalances,8,3,"UsedDays=5.00 but approved leave days=8.00 for EmployeeId=3 LeaveTypeId=1 Year=2026",2026-07-22T05:00:12Z,False,,,
+103,12,HOLIDAY_MAPPING,Medium,LeaveRequests,70,5,"Leave 70 includes holiday Independence Day on 2026-08-15 but policy ExcludeHolidays=1",2026-07-22T05:00:13Z,True,2026-07-22T10:15:00Z,admin,Adjusted TotalDays manually

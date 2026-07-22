@@ -46,6 +46,7 @@ Controller → Service → Repository (ADO.NET) → SQL Server stored procedures
 | Data Warehouse | `/api/DataWarehouse` | Admin JWT |
 | Maintenance | `/api/Maintenance` | Admin JWT |
 | Backup & Security Ops | `/api/BackupSecurity` | Admin JWT |
+| Optimization & Partitioning | `/api/Optimization` | Admin JWT |
 | Employees | `/api/Employee` | Open |
 | Leaves | `/api/Leave` | Open |
 | Departments | `/api/Department` | Open |
@@ -83,6 +84,7 @@ Exports (POST, Admin JWT):
 | `Scripts/Maintenance/MAINTENANCE_MASTER_DEPLOY.sql` | Archival, monitoring, maintenance jobs |
 | `Scripts/DataWarehouse/DW_MASTER_DEPLOY.sql` | Analytics warehouse + ETL |
 | `Scripts/BackupSecurity/BACKUP_SECURITY_MASTER_DEPLOY.sql` | Backup automation, DR, ops monitoring |
+| `Scripts/Optimization/OPTIMIZATION_MASTER_DEPLOY.sql` | Partitioning, index optimization, ops analytics |
 
 ```powershell
 sqlcmd -S localhost -E -C -i MASTER_DEPLOY.sql
@@ -91,13 +93,17 @@ sqlcmd -S localhost -E -C -i Scripts\Maintenance\MAINTENANCE_MASTER_DEPLOY.sql
 New-Item -ItemType Directory -Force -Path C:\Backup\EmployeeLeaveDb | Out-Null
 cd Scripts\BackupSecurity
 sqlcmd -S localhost -E -C -i BACKUP_SECURITY_MASTER_DEPLOY.sql
+cd ..\Optimization
+sqlcmd -S localhost -E -C -i OPTIMIZATION_MASTER_DEPLOY.sql
+sqlcmd -S localhost -E -C -i 07_Agent_Jobs.sql
 ```
 
 Default admin: `admin` / `Admin@123`  
 Security details: [FINAL_DATABASE_SECURITY_DOCUMENTATION.md](Docs/FINAL_DATABASE_SECURITY_DOCUMENTATION.md)  
 Maintenance module: [DATABASE_MAINTENANCE_DOCUMENTATION.md](Docs/DATABASE_MAINTENANCE_DOCUMENTATION.md)  
 Data warehouse: [DATA_WAREHOUSE_DOCUMENTATION.md](Docs/DATA_WAREHOUSE_DOCUMENTATION.md)  
-Backup / DR / Security ops: [BACKUP_SECURITY_DISASTER_RECOVERY_DOCUMENTATION.md](Docs/BACKUP_SECURITY_DISASTER_RECOVERY_DOCUMENTATION.md)
+Backup / DR / Security ops: [BACKUP_SECURITY_DISASTER_RECOVERY_DOCUMENTATION.md](Docs/BACKUP_SECURITY_DISASTER_RECOVERY_DOCUMENTATION.md)  
+Optimization / partitioning: [DATABASE_OPTIMIZATION_PARTITIONING_DOCUMENTATION.md](Docs/DATABASE_OPTIMIZATION_PARTITIONING_DOCUMENTATION.md)
 
 ## Tests
 
@@ -111,6 +117,7 @@ dotnet test
 - [Database Maintenance Documentation](Docs/DATABASE_MAINTENANCE_DOCUMENTATION.md)
 - [Data Warehouse Documentation](Docs/DATA_WAREHOUSE_DOCUMENTATION.md)
 - [Backup, Security & Disaster Recovery](Docs/BACKUP_SECURITY_DISASTER_RECOVERY_DOCUMENTATION.md)
+- [Database Optimization, Partitioning & Operational Analytics](Docs/DATABASE_OPTIMIZATION_PARTITIONING_DOCUMENTATION.md)
 - [Reporting & Audit Design](Docs/Reporting-Audit-Design.md)
 - [Postman Collection](Docs/EmployeeLeaveManagement.postman_collection.json)
 - GitHub: https://github.com/hemaramachandravasu/EmployeeLeaveManagment

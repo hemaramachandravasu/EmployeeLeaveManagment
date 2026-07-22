@@ -1,0 +1,5 @@
+SchemaName,TableName,IndexName,PartitionNumber,IndexType,FragmentationPercent,PageCount,AvgPageSpaceUsedPercent,RecommendedAction,IsPartitionAligned,PartitionScheme
+dbo,LeaveRequests,IX_LeaveRequests_Status_StartDate,5,NONCLUSTERED,34.50,220,72.10,Rebuild,True,PS_LeaveByCreatedDate
+dbo,AuditLogs,IX_AuditLogs_Table_ChangedOn,10,NONCLUSTERED,18.25,160,80.40,Reorganize,True,PS_AuditByChangedOn
+dbo,LeaveRequests,PK_LeaveRequests,5,CLUSTERED,6.20,890,92.00,Healthy,True,PS_LeaveByCreatedDate
+dbo,Employees,IX_Employees_DepartmentId,1,NONCLUSTERED,4.10,80,88.50,Healthy,False,

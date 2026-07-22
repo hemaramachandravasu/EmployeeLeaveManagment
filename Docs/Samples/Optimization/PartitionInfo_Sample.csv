@@ -1,0 +1,7 @@
+SchemaName,TableName,IndexName,PartitionNumber,FilegroupName,RowCounts,LowerBoundaryInclusive,UpperBoundaryExclusive,PartitionFunction,PartitionScheme,TotalSpaceMB
+dbo,LeaveRequests,PK_LeaveRequests,1,FG_Leave_Pre2024,1200,,2024-01-01,PF_LeaveByCreatedDate,PS_LeaveByCreatedDate,1.25
+dbo,LeaveRequests,PK_LeaveRequests,2,FG_Leave_2024,42000,2024-01-01,2025-01-01,PF_LeaveByCreatedDate,PS_LeaveByCreatedDate,18.50
+dbo,LeaveRequests,PK_LeaveRequests,3,FG_Leave_2025,61000,2025-01-01,2026-01-01,PF_LeaveByCreatedDate,PS_LeaveByCreatedDate,26.00
+dbo,LeaveRequests,PK_LeaveRequests,4,FG_Leave_2026,78000,2026-01-01,2027-01-01,PF_LeaveByCreatedDate,PS_LeaveByCreatedDate,34.75
+dbo,AuditLogs,PK_AuditLogs,9,FG_Audit_2026_Q3,95000,2026-07-01,2026-10-01,PF_AuditByChangedOn,PS_AuditByChangedOn,22.40
+dbo,AuditLogs,PK_AuditLogs,10,FG_Audit_2026_Q4,12000,2026-10-01,2027-01-01,PF_AuditByChangedOn,PS_AuditByChangedOn,3.10

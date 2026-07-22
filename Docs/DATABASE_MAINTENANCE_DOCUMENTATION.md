@@ -155,11 +155,12 @@ sqlcmd -S localhost -E -C -i 06_Agent_Jobs.sql
 
 ## 9. Future Enhancement Recommendations
 
-- Partition large archive tables by year and switch partitions for near-zero-cost archival
+- **Implemented:** OLTP partitioning for `LeaveRequests` / `AuditLogs` — see [DATABASE_OPTIMIZATION_PARTITIONING_DOCUMENTATION.md](DATABASE_OPTIMIZATION_PARTITIONING_DOCUMENTATION.md)
+- Partition-SWITCH archival into `LeaveRequestsArchive` / `AuditLogsArchive` for near-zero-cost moves
 - Move archives to a dedicated `EmployeeLeaveArchive` database / filegroup
 - Extended Events session dedicated to deadlocks with alerting
 - Query Store baselines and regressions surfaced in the health API
-- Online index rebuild where Enterprise edition is available
+- Online index rebuild where Enterprise edition is available (`sp_Opt_IndexRebuildReorganize @OnlineRebuild = 1`)
 - Automated ticket creation when fragmentation or free space crosses thresholds
 
 ---

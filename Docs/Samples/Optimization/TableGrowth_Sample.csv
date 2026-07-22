@@ -1,0 +1,6 @@
+SchemaName,TableName,RowCounts,TotalSpaceMB,UsedSpaceMB,DataSpaceMB,IsPartitioned,PartitionSchemeOrFilegroup,PartitionCount
+dbo,LeaveRequests,185000,92.50,88.00,80.25,True,PS_LeaveByCreatedDate,6
+dbo,AuditLogs,640000,145.00,138.50,130.00,True,PS_AuditByChangedOn,14
+dbo,Employees,2500,4.25,3.80,3.10,False,PRIMARY,1
+dbo,Users,2500,2.10,1.90,1.50,False,PRIMARY,1
+dbo,LeaveRequestsArchive,420000,180.00,172.00,160.00,False,PRIMARY,1

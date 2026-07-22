@@ -1,0 +1,6 @@
+TableName,ActionType,EventCount,DistinctActors,FirstEventAt,LastEventAt
+LeaveRequests,Insert,42,3,2026-06-22T08:00:00Z,2026-07-22T14:20:00Z
+LeaveRequests,Update,85,4,2026-06-22T09:10:00Z,2026-07-22T15:01:00Z
+Employees,Update,12,2,2026-06-25T11:00:00Z,2026-07-20T16:40:00Z
+Users,Insert,2,1,2026-07-01T10:00:00Z,2026-07-10T12:00:00Z
+LeavePolicies,Update,1,1,2026-07-15T09:00:00Z,2026-07-15T09:00:00Z

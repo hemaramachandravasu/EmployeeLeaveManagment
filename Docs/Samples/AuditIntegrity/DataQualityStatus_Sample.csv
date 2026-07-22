@@ -1,0 +1,2 @@
+DataQualityStatus,OpenCritical,OpenHigh,OpenMedium,OpenLow,AuditEventsLast7Days,UserActivityLast7Days,ExceptionsLast7Days,LastComplianceRunStatus,LastComplianceRunAt,ActiveHolidays,ActivePolicies,CapturedAtUtc
+AtRisk,1,2,3,0,140,56,0,Warning,2026-07-22T05:00:15Z,8,3,2026-07-22T12:00:00Z

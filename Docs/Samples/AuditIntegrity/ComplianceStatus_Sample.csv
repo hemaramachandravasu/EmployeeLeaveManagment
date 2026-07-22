@@ -1,0 +1,2 @@
+ComplianceStatus,OpenViolations,OpenCriticalViolations,FailedRunsLast24h,ExceptionsLast24h,LastSuccessfulCheckAt,AuditEventsLast24h,UserActivityLast24h,CapturedAtUtc
+AttentionRequired,6,1,0,0,2026-07-22T05:00:15Z,24,11,2026-07-22T12:00:00Z

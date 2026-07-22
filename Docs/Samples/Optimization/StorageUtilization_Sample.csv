@@ -1,0 +1,5 @@
+FilegroupName,LogicalFileName,PhysicalPath,FileType,SizeMB,UsedMB,FreeMB,UsedPercent,GrowthSetting,GrowthUnit
+PRIMARY,EmployeeLeaveDb,C:\...\EmployeeLeaveDb.mdf,ROWS,128.00,95.00,33.00,74.22,16,MB
+FG_Leave_2026,Leave_2026,C:\...\EmployeeLeaveDb_Leave_2026.ndf,ROWS,32.00,22.50,9.50,70.31,16,MB
+FG_Audit_2026_Q3,Audit_2026Q3,C:\...\EmployeeLeaveDb_Audit_2026_Q3.ndf,ROWS,24.00,18.00,6.00,75.00,8,MB
+NULL,EmployeeLeaveDb_log,C:\...\EmployeeLeaveDb_log.ldf,LOG,64.00,12.00,52.00,18.75,64,MB

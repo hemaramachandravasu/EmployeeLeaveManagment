@@ -1,0 +1,4 @@
+ExecutionCount,TotalElapsedMs,AvgElapsedMs,TotalCpuMs,TotalLogicalReads,AvgLogicalReads,LastExecutionTime,ObjectName,QueryText
+1250,84500,67,52000,1800000,1440,2026-07-22T11:55:00Z,sp_GetPendingLeaveRequests,SELECT ... FROM LeaveRequests WHERE Status = N'Pending'
+830,61200,73,41000,950000,1144,2026-07-22T11:50:00Z,sp_GetAuditHistory,SELECT ... FROM AuditLogs WHERE ChangedOn >= @From
+410,28800,70,19000,420000,1024,2026-07-22T11:40:00Z,sp_EmployeeLeaveSummary,SELECT ... JOIN LeaveRequests

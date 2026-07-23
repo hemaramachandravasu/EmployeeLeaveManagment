@@ -1,0 +1,4 @@
+AlertId,AlertType,Severity,MessageText,MetricValue,ThresholdValue,CapturedAt,IsAcknowledged
+501,Fragmentation,Warning,Index IX_LeaveRequests_Status_StartDate on dbo.LeaveRequests fragmented at 34.50%,34.50,30.00,2026-07-23T10:00:00Z,False
+502,Storage,Warning,Database storage utilization at 81.20%,81.20,80.00,2026-07-23T10:00:05Z,False
+503,SlowQuery,Critical,Long-running query session 62 by appuser elapsed 210s,210.00,180.00,2026-07-23T10:12:00Z,True

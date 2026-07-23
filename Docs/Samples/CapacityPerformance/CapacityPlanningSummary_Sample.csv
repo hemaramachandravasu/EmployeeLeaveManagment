@@ -1,0 +1,2 @@
+DatabaseName,CurrentSizeMB,UsedSpaceMB,UsedPercent,AvgDailyGrowthMB,ProjectedSize30dMB,ProjectedSize90dMB,DaysUntilFull,ForecastMethod,ForecastCapturedAt,OpenCapacityAlerts,CapturedAtUtc
+EmployeeLeaveDb,256.00,148.50,58.01,0.8500,174.00,225.00,126,LinearHistory,2026-07-23T12:00:00Z,0,2026-07-23T12:05:00Z

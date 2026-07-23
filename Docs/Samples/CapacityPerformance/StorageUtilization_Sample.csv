@@ -1,0 +1,4 @@
+LogicalFileName,PhysicalPath,FileType,FilegroupName,SizeMB,UsedMB,FreeMB,UsedPercent,Autogrowth
+EmployeeLeaveDb,C:\...\EmployeeLeaveDb.mdf,ROWS,PRIMARY,128.00,95.00,33.00,74.22,16 MB
+Leave_2026,C:\...\EmployeeLeaveDb_Leave_2026.ndf,ROWS,FG_Leave_2026,32.00,22.50,9.50,70.31,16 MB
+EmployeeLeaveDb_log,C:\...\EmployeeLeaveDb_log.ldf,LOG,,64.00,12.00,52.00,18.75,64 MB

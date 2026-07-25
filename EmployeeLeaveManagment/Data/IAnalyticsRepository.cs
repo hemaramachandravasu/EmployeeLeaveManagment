@@ -1,15 +1,14 @@
 ﻿using EmployeeLeaveManagment.DTOs;
 
-namespace EmployeeLeaveManagment.Data
+namespace EmployeeLeaveManagment.Data;
+
+public interface IAnalyticsRepository
 {
-    public interface IAnalyticsRepository
-    {
-        Task<IEnumerable<AnalyticsDto>> GetLeaveTrendAnalysisAsync(int? year = null);
+    Task<IEnumerable<LeaveTrendDto>> GetLeaveTrendAnalysisAsync(int? year = null);
 
-        Task<IEnumerable<AnalyticsDto>> GetDepartmentComparisonAsync(int? year = null);
+    Task<IEnumerable<DepartmentComparisonDto>> GetDepartmentComparisonAsync(int? year = null);
 
-        Task<IEnumerable<AnalyticsDto>> GetFrequentLeavePatternAsync();
+    Task<IEnumerable<FrequentLeavePatternDto>> GetFrequentLeavePatternAsync();
 
-        Task<IEnumerable<AnalyticsDto>> GetForecastLeaveUtilizationAsync();
-    }
+    Task<IEnumerable<ForecastLeaveUtilizationDto>> GetForecastLeaveUtilizationAsync();
 }

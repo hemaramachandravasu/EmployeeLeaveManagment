@@ -7,11 +7,11 @@ namespace EmployeeLeaveManagment.DTOs
         public int DepartmentId { get; set; }
 
         [Required]
-        [StringLength(20)]
+        [StringLength(50, MinimumLength = 1, ErrorMessage = "DepartmentCode is required (max 50 characters).")]
         public string DepartmentCode { get; set; } = string.Empty;
 
         [Required]
-        [StringLength(100)]
+        [StringLength(200, MinimumLength = 1, ErrorMessage = "DepartmentName is required (max 200 characters).")]
         public string DepartmentName { get; set; } = string.Empty;
 
         [StringLength(250)]

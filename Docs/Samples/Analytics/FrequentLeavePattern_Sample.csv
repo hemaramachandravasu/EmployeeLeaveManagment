@@ -1,0 +1,4 @@
+EmployeeCode,EmployeeName,DepartmentName,TotalLeaves,TotalDays,AverageLeaveDays
+EMP001,Alice Johnson,Engineering,5,14,2.80
+EMP002,Bob Smith,Engineering,4,10,2.50
+EMP003,Carol Lee,Human Resources,3,6,2.00

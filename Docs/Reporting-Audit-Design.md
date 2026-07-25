@@ -1,49 +1,58 @@
 # Reporting, Audit Trail, and Archival Design
 
 ## Audit Trail Design
-- Central table: dbo.AuditLogs captures TableName, KeyValue, Operation (I/U/D), OldValues (JSON), NewValues (JSON), ChangedBy, ChangedAt, TransactionId.
-- Triggers added for dbo.Leaves and dbo.Employees to insert JSON snapshots into AuditLogs.
-- Application should set SESSION_CONTEXT('CurrentUser') prior to executing DML so ChangedBy reflects real user id instead of service account.
-- For very high write-throughput, consider an asynchronous pipeline (Service Broker, EventStream) to write audits off the critical path.
+- Central table: `dbo.AuditLogs` captures TableName, RecordId, ActionType (Insert/Update/Delete), OldValue (JSON), NewValue (JSON), ChangedBy, ChangedOn.
+- Triggers:
+  - `trg_Employees_Audit`
+  - `trg_LeaveRequests_Audit`
+  - `trg_Users_Audit` (password hashes redacted as `***` in JSON payloads)
+- Application may set SESSION_CONTEXT prior to DML so ChangedBy can reflect the real app user where configured.
+- For very high write-throughput, consider an asynchronous pipeline (Service Broker / queue) to write audits off the critical path.
 
 ## Analytics Queries
-- Stored procedures implemented under Scripts/Analytics:
-  - sp_GetLeaveTrend: returns month-over-month totals and percent change.
-  - sp_GetDepartmentComparison: aggregates per-department stats and averages.
-  - sp_GetFrequentLeavePatterns: top N employees by leave count and days.
-  - sp_GetForecastedLeaveUtilization: simple forecast based on last 12 months average.
-- Keep heavy aggregations on the DB side for performance and network efficiency.
+- Stored procedures (also under `Scripts/Analytics/` legacy names):
+  - `sp_LeaveTrendAnalysis` / `sp_GetLeaveTrend` — month-over-month totals
+  - `sp_DepartmentComparison` / `sp_GetDepartmentComparison` — per-department aggregates
+  - `sp_FrequentLeavePattern` / `sp_GetFrequentLeavePatterns` — top employees by leave volume
+  - `sp_ForecastLeaveUtilization` / `sp_GetForecastedLeaveUtilization` — historical-average forecast
+- Heavy aggregations stay on the DB side for performance and network efficiency.
+- Admin API: `/api/Analytics/*`
 
 ## Scheduling / Automation
-- A .NET BackgroundService (ReportSchedulerService) was added to generate CSV reports periodically using IReportRepository.
-- The service writes CSV to Reporting:OutputFolder (configurable in appsettings.json) on an interval defined by Reporting:IntervalHours.
-- Alternative: Use SQL Server Agent jobs to run stored procedures and export results using sqlcmd or bcp.
+- `ReportSchedulerService` (.NET `BackgroundService`) auto-generates **CSV and Excel (.xlsx)** reports on the interval in `Reporting:IntervalHours`.
+- Output folder: `Reporting:OutputFolder` (default `C:\Reports`).
+- Each run writes department stats, monthly utilization, leave trend, department comparison, frequent leave pattern, and forecast files.
+- Alternative: SQL Server Agent jobs (`Scripts/Maintenance/06_Agent_Jobs.sql`) for archival/maintenance schedules.
 
 ## Archival Strategy
-- Retention policy: move "closed" leaves older than 3 years to dbo.LeavesArchive on a monthly job.
-- Implementation options:
-  - Simple move via INSERT..DELETE in a transaction (suitable for moderate volumes).
-  - Partitioning on FromDate + partition switch to archive table for large datasets (near-instant move).
-- Ensure referential integrity: either archive related audit records or keep them in place and index/partition audit table.
+- Closed leave requests move to `dbo.LeaveRequestsArchive` via Maintenance module (`sp_Maint_RunArchiveJob` / Agent job `ELM_Archive_Execution`).
+- Criteria and restore paths: see `Docs/DATABASE_MAINTENANCE_DOCUMENTATION.md`.
+- Large datasets: optional partitioning for `LeaveRequests` / `AuditLogs` (Optimization module).
 
 ## Indexing & Performance
-- AuditLogs: index on (TableName, ChangedAt) and KeyValue; create filtered index for recent data.
-- Leaves: index on FromDate, EmployeeId; consider computed MonthStart persisted column for month queries.
-- Use Query Store and EXPLAIN plans to identify missing indexes and tune queries.
+- `AuditLogs`: `IX_AuditLogs_Table_ChangedOn`, `IX_AuditLogs_RecordId`
+- Leave history: `IX_LeaveRequests_Employee_StartDate`, `IX_LeaveRequests_Status_StartDate`
+- Use Query Store / actual execution plans to validate analytics SPs under load.
 
 ## Operational Notes
-- Grant the application DB user INSERT permissions on dbo.AuditLogs and EXECUTE on analytics SPs.
-- Deploy triggers and audit table to a non-production environment first and validate.
+- Grant the application DB user INSERT on `dbo.AuditLogs` and EXECUTE on analytics SPs.
+- Deploy triggers to non-production first and validate payload size/latency.
 
 ## Assumptions and Limitations
-- Current reporting export writes CSV only to avoid adding external NuGet packages. If Excel (.xlsx) output is required, add a dependency such as ClosedXML and update ReportSchedulerService.
-- Retention period default = 3 years; adjust to local policy.
-- Triggers execute synchronously; high-volume systems should move to async patterns to avoid latency.
+- Audit triggers run synchronously on the same transaction as the DML — high-volume systems may prefer async audit.
+- Users audit stores redacted password hashes only.
+- Scheduler interval defaults to 24 hours; adjust in `appsettings.json`.
+- Retention defaults (Maintenance module) may differ from older “3 years” notes; configure via `ArchiveRetentionConfig`.
+
+## Sample outputs
+- Analytics: `Docs/Samples/Analytics/`
+- Reporting (Task 2): `Docs/Samples/Reporting/`
 
 ## File locations
-- Scripts/Audit/
-- Scripts/Analytics/
-- Scripts/Archival/
-- EmployeeLeaveManagment/Services/ReportSchedulerService.cs
-- EmployeeLeaveManagment/appsettings.json
+- `MASTER_DEPLOY.sql` (audit + analytics SPs)
+- `Scripts/Audit/`, `Scripts/Analytics/`, `Scripts/Archival/`
+- `Scripts/Database/Task3_Users_Audit_Trigger.sql`
+- `EmployeeLeaveManagment/Services/ReportSchedulerService.cs`
+- `EmployeeLeaveManagment/Controllers/AnalyticsController.cs`
+- `EmployeeLeaveManagment/appsettings.json`
 

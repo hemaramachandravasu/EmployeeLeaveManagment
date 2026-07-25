@@ -1,15 +1,9 @@
-using EmployeeLeaveManagment.Data;
 using EmployeeLeaveManagment.DTOs;
-using EmployeeLeaveManagment.Models;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Data.SqlClient;
-using System;
-using System.Collections.Generic;
 using System.Data;
 
 namespace EmployeeLeaveManagment.Data
 {
- 
     public class EmployeeRepository : IEmployeeRepository
     {
         private readonly ISqlConnectionFactory _connectionFactory;
@@ -24,182 +18,122 @@ namespace EmployeeLeaveManagment.Data
             List<EmployeeDto> employees = new();
 
             await using SqlConnection connection = await _connectionFactory.CreateOpenConnectionAsync();
-            using SqlCommand command = new SqlCommand(@"
-                SELECT 
-                    EmployeeId,
-                    EmployeeCode,
-                    FirstName,
-                    LastName,
-                    Gender,
-                    DateOfBirth,
-                    MobileNumber,
-                    Email,
-                    DepartmentId,
-                    ManagerId,
-                    JoinDate,
-                    Salary,
-                    Address,
-                    IsActive
-                FROM Employees", connection);
+            await using SqlCommand command = new(@"
+                SELECT
+                    EmployeeId, EmployeeCode, FirstName, LastName, Gender, DateOfBirth,
+                    MobileNumber, Email, DepartmentId, ManagerId, JoinDate, Salary, Address, IsActive
+                FROM Employees
+                ORDER BY EmployeeId", connection);
 
-            using SqlDataReader reader = await command.ExecuteReaderAsync();
-
+            await using SqlDataReader reader = await command.ExecuteReaderAsync();
             while (await reader.ReadAsync())
-            {
-                employees.Add(new EmployeeDto
-                {
-                    EmployeeId = Convert.ToInt32(reader["EmployeeId"]),
-                    EmployeeCode = reader["EmployeeCode"].ToString()!,
-                    FirstName = reader["FirstName"].ToString()!,
-                    LastName = reader["LastName"]?.ToString(),
-                    Gender = reader["Gender"].ToString()!,
-                    DateOfBirth = Convert.ToDateTime(reader["DateOfBirth"]),
-                    MobileNumber = reader["MobileNumber"].ToString()!,
-                    Email = reader["Email"].ToString()!,
-                    DepartmentId = Convert.ToInt32(reader["DepartmentId"]),
-                    ManagerId = reader["ManagerId"] == DBNull.Value
-                        ? null
-                        : Convert.ToInt32(reader["ManagerId"]),
-                    JoinDate = Convert.ToDateTime(reader["JoinDate"]),
-                    Salary = Convert.ToDecimal(reader["Salary"]),
-                    Address = reader["Address"]?.ToString(),
-                    IsActive = Convert.ToBoolean(reader["IsActive"])
-                });
-            }
+                employees.Add(MapEmployee(reader));
 
             return employees;
         }
 
         public async Task<EmployeeDto?> GetEmployeeByIdAsync(int employeeId)
         {
-            EmployeeDto? employee = null;
-
             await using SqlConnection connection = await _connectionFactory.CreateOpenConnectionAsync();
-            using SqlCommand command = new SqlCommand(@"
+            await using SqlCommand command = new(@"
                 SELECT
-                    EmployeeId,
-                    EmployeeCode,
-                    FirstName,
-                    LastName,
-                    Gender,
-                    DateOfBirth,
-                    MobileNumber,
-                    Email,
-                    DepartmentId,
-                    ManagerId,
-                    JoinDate,
-                    Salary,
-                    Address,
-                    IsActive
+                    EmployeeId, EmployeeCode, FirstName, LastName, Gender, DateOfBirth,
+                    MobileNumber, Email, DepartmentId, ManagerId, JoinDate, Salary, Address, IsActive
                 FROM Employees
                 WHERE EmployeeId = @EmployeeId", connection);
 
             command.Parameters.AddWithValue("@EmployeeId", employeeId);
 
-            using SqlDataReader reader = await command.ExecuteReaderAsync();
+            await using SqlDataReader reader = await command.ExecuteReaderAsync();
+            if (!await reader.ReadAsync())
+                return null;
 
-            if (await reader.ReadAsync())
-            {
-                employee = new EmployeeDto
-                {
-                    EmployeeId = Convert.ToInt32(reader["EmployeeId"]),
-                    EmployeeCode = reader["EmployeeCode"].ToString()!,
-                    FirstName = reader["FirstName"].ToString()!,
-                    LastName = reader["LastName"]?.ToString(),
-                    Gender = reader["Gender"].ToString()!,
-                    DateOfBirth = Convert.ToDateTime(reader["DateOfBirth"]),
-                    MobileNumber = reader["MobileNumber"].ToString()!,
-                    Email = reader["Email"].ToString()!,
-                    DepartmentId = Convert.ToInt32(reader["DepartmentId"]),
-                    ManagerId = reader["ManagerId"] == DBNull.Value
-                        ? null
-                        : Convert.ToInt32(reader["ManagerId"]),
-                    JoinDate = Convert.ToDateTime(reader["JoinDate"]),
-                    Salary = Convert.ToDecimal(reader["Salary"]),
-                    Address = reader["Address"]?.ToString(),
-                    IsActive = Convert.ToBoolean(reader["IsActive"])
-                };
-            }
-
-            return employee;
+            return MapEmployee(reader);
         }
+
         public async Task<int> AddEmployeeAsync(EmployeeDto employee)
         {
-            await using SqlConnection connection = await _connectionFactory.CreateOpenConnectionAsync();
-
-            // Validate Department exists to avoid FK constraint failure
-            using (SqlCommand check = new SqlCommand("SELECT COUNT(1) FROM Departments WHERE DepartmentId = @DepartmentId", connection))
-            {
-                check.Parameters.AddWithValue("@DepartmentId", employee.DepartmentId);
-                var existsObj = await check.ExecuteScalarAsync();
-                var exists = existsObj == null ? 0 : Convert.ToInt32(existsObj);
-                if (exists == 0)
-                {
-                    return -1; // sentinel for missing department
-                }
-            }
-
-            using SqlCommand command = new SqlCommand("sp_AddEmployee", connection);
-
-            command.CommandType = CommandType.StoredProcedure;
-
-            command.Parameters.AddWithValue("@EmployeeCode", employee.EmployeeCode);
-            command.Parameters.AddWithValue("@FirstName", employee.FirstName);
-            command.Parameters.AddWithValue("@LastName", (object?)employee.LastName ?? DBNull.Value);
-            command.Parameters.AddWithValue("@Gender", employee.Gender);
-            command.Parameters.AddWithValue("@DateOfBirth", employee.DateOfBirth);
-            command.Parameters.AddWithValue("@MobileNumber", employee.MobileNumber);
-            command.Parameters.AddWithValue("@Email", employee.Email);
-            command.Parameters.AddWithValue("@DepartmentId", employee.DepartmentId);
-            command.Parameters.AddWithValue("@ManagerId", (object?)employee.ManagerId ?? DBNull.Value);
-            command.Parameters.AddWithValue("@JoinDate", employee.JoinDate);
-            command.Parameters.AddWithValue("@Salary", employee.Salary);
-            command.Parameters.AddWithValue("@Address", (object?)employee.Address ?? DBNull.Value);
-
             try
             {
-                return await command.ExecuteNonQueryAsync();
+                await using SqlConnection connection = await _connectionFactory.CreateOpenConnectionAsync();
+                await using SqlCommand command = new("sp_AddEmployee", connection)
+                {
+                    CommandType = CommandType.StoredProcedure
+                };
+
+                AddEmployeeParameters(command, employee, includeEmployeeId: false);
+
+                SqlParameter outputId = new("@NewEmployeeId", SqlDbType.Int)
+                {
+                    Direction = ParameterDirection.Output
+                };
+                command.Parameters.Add(outputId);
+
+                SqlParameter returnValue = AddReturnValue(command);
+                await command.ExecuteNonQueryAsync();
+
+                int code = ReadReturnValue(returnValue);
+                if (code < 0)
+                    return code;
+
+                if (outputId.Value != DBNull.Value && outputId.Value != null)
+                {
+                    int newId = Convert.ToInt32(outputId.Value);
+                    if (newId > 0)
+                        return newId;
+                }
+
+                return code > 0 ? code : 0;
             }
-            catch (SqlException)
+            catch (SqlException ex) when (ex.Number is 2627 or 2601)
             {
-                // In case the FK still fails for unexpected reasons, return 0 for controller to map
-                return 0;
+                return -2;
+            }
+            catch (SqlException ex) when (ex.Number == 547)
+            {
+                return -1;
             }
         }
 
         public async Task<int> UpdateEmployeeAsync(EmployeeDto employee)
         {
-            await using SqlConnection connection = await _connectionFactory.CreateOpenConnectionAsync();
-            using SqlCommand command = new SqlCommand("sp_UpdateEmployee", connection);
+            try
+            {
+                await using SqlConnection connection = await _connectionFactory.CreateOpenConnectionAsync();
+                await using SqlCommand command = new("sp_UpdateEmployee", connection)
+                {
+                    CommandType = CommandType.StoredProcedure
+                };
 
-            command.CommandType = CommandType.StoredProcedure;
+                AddEmployeeParameters(command, employee, includeEmployeeId: true);
+                command.Parameters.AddWithValue("@IsActive", employee.IsActive);
 
-            command.Parameters.AddWithValue("@EmployeeId", employee.EmployeeId);
-            command.Parameters.AddWithValue("@EmployeeCode", employee.EmployeeCode);
-            command.Parameters.AddWithValue("@FirstName", employee.FirstName);
-            command.Parameters.AddWithValue("@LastName", (object?)employee.LastName ?? DBNull.Value);
-            command.Parameters.AddWithValue("@Gender", employee.Gender);
-            command.Parameters.AddWithValue("@DateOfBirth", employee.DateOfBirth);
-            command.Parameters.AddWithValue("@MobileNumber", employee.MobileNumber);
-            command.Parameters.AddWithValue("@Email", employee.Email);
-            command.Parameters.AddWithValue("@DepartmentId", employee.DepartmentId);
-            command.Parameters.AddWithValue("@ManagerId", (object?)employee.ManagerId ?? DBNull.Value);
-            command.Parameters.AddWithValue("@JoinDate", employee.JoinDate);
-            command.Parameters.AddWithValue("@Salary", employee.Salary);
-            command.Parameters.AddWithValue("@Address", (object?)employee.Address ?? DBNull.Value);
-
-            return await command.ExecuteNonQueryAsync();
+                SqlParameter returnValue = AddReturnValue(command);
+                await command.ExecuteNonQueryAsync();
+                return ReadReturnValue(returnValue);
+            }
+            catch (SqlException ex) when (ex.Number is 2627 or 2601)
+            {
+                return -3;
+            }
+            catch (SqlException ex) when (ex.Number == 547)
+            {
+                return -2;
+            }
         }
 
         public async Task<int> DeleteEmployeeAsync(int employeeId)
         {
             await using SqlConnection connection = await _connectionFactory.CreateOpenConnectionAsync();
-            using SqlCommand command = new SqlCommand("sp_DeleteEmployee", connection);
-
-            command.CommandType = CommandType.StoredProcedure;
+            await using SqlCommand command = new("sp_DeleteEmployee", connection)
+            {
+                CommandType = CommandType.StoredProcedure
+            };
             command.Parameters.AddWithValue("@EmployeeId", employeeId);
 
-            return await command.ExecuteNonQueryAsync();
+            SqlParameter returnValue = AddReturnValue(command);
+            await command.ExecuteNonQueryAsync();
+            return ReadReturnValue(returnValue);
         }
 
         public async Task<IEnumerable<EmployeeDto>> SearchEmployeesAsync(string? employeeName, int? departmentId)
@@ -207,48 +141,26 @@ namespace EmployeeLeaveManagment.Data
             List<EmployeeDto> employees = new();
 
             await using SqlConnection connection = await _connectionFactory.CreateOpenConnectionAsync();
-            using SqlCommand command = new SqlCommand(@"
+            await using SqlCommand command = new(@"
                 SELECT
-                    EmployeeId,
-                    EmployeeCode,
-                    FirstName,
-                    LastName,
-                    Gender,
-                    MobileNumber,
-                    Email,
-                    DepartmentId,
-                    JoinDate,
-                    Salary,
-                    IsActive
+                    EmployeeId, EmployeeCode, FirstName, LastName, Gender, DateOfBirth,
+                    MobileNumber, Email, DepartmentId, ManagerId, JoinDate, Salary, Address, IsActive
                 FROM Employees
-                WHERE (@EmployeeName IS NULL OR FirstName LIKE '%' + @EmployeeName + '%' OR LastName LIKE '%' + @EmployeeName + '%')
-                  AND (@DepartmentId IS NULL OR DepartmentId = @DepartmentId)", connection);
+                WHERE (@EmployeeName IS NULL
+                       OR FirstName LIKE '%' + @EmployeeName + '%'
+                       OR LastName LIKE '%' + @EmployeeName + '%'
+                       OR EmployeeCode LIKE '%' + @EmployeeName + '%')
+                  AND (@DepartmentId IS NULL OR DepartmentId = @DepartmentId)
+                ORDER BY EmployeeId", connection);
 
             command.Parameters.AddWithValue("@EmployeeName",
-                string.IsNullOrWhiteSpace(employeeName) ? DBNull.Value : employeeName);
-
+                string.IsNullOrWhiteSpace(employeeName) ? DBNull.Value : employeeName.Trim());
             command.Parameters.AddWithValue("@DepartmentId",
                 departmentId.HasValue ? departmentId.Value : DBNull.Value);
 
-            using SqlDataReader reader = await command.ExecuteReaderAsync();
-
+            await using SqlDataReader reader = await command.ExecuteReaderAsync();
             while (await reader.ReadAsync())
-            {
-                employees.Add(new EmployeeDto
-                {
-                    EmployeeId = Convert.ToInt32(reader["EmployeeId"]),
-                    EmployeeCode = reader["EmployeeCode"].ToString()!,
-                    FirstName = reader["FirstName"].ToString()!,
-                    LastName = reader["LastName"]?.ToString(),
-                    Gender = reader["Gender"].ToString()!,
-                    MobileNumber = reader["MobileNumber"].ToString()!,
-                    Email = reader["Email"].ToString()!,
-                    DepartmentId = Convert.ToInt32(reader["DepartmentId"]),
-                    JoinDate = Convert.ToDateTime(reader["JoinDate"]),
-                    Salary = Convert.ToDecimal(reader["Salary"]),
-                    IsActive = Convert.ToBoolean(reader["IsActive"])
-                });
-            }
+                employees.Add(MapEmployee(reader));
 
             return employees;
         }
@@ -258,33 +170,19 @@ namespace EmployeeLeaveManagment.Data
             List<EmployeeDto> employees = new();
 
             await using SqlConnection connection = await _connectionFactory.CreateOpenConnectionAsync();
-            using SqlCommand command = new SqlCommand(@"
+            await using SqlCommand command = new(@"
                 SELECT
-                    EmployeeId,
-                    EmployeeCode,
-                    FirstName,
-                    LastName,
-                    Email,
-                    MobileNumber
+                    EmployeeId, EmployeeCode, FirstName, LastName, Gender, DateOfBirth,
+                    MobileNumber, Email, DepartmentId, ManagerId, JoinDate, Salary, Address, IsActive
                 FROM Employees
-                WHERE DepartmentId = @DepartmentId", connection);
+                WHERE DepartmentId = @DepartmentId
+                ORDER BY EmployeeId", connection);
 
             command.Parameters.AddWithValue("@DepartmentId", departmentId);
 
-            using SqlDataReader reader = await command.ExecuteReaderAsync();
-
+            await using SqlDataReader reader = await command.ExecuteReaderAsync();
             while (await reader.ReadAsync())
-            {
-                employees.Add(new EmployeeDto
-                {
-                    EmployeeId = Convert.ToInt32(reader["EmployeeId"]),
-                    EmployeeCode = reader["EmployeeCode"].ToString()!,
-                    FirstName = reader["FirstName"].ToString()!,
-                    LastName = reader["LastName"]?.ToString(),
-                    Email = reader["Email"].ToString()!,
-                    MobileNumber = reader["MobileNumber"].ToString()!
-                });
-            }
+                employees.Add(MapEmployee(reader));
 
             return employees;
         }
@@ -292,21 +190,75 @@ namespace EmployeeLeaveManagment.Data
         public async Task<int> GetEmployeeCountAsync()
         {
             await using SqlConnection connection = await _connectionFactory.CreateOpenConnectionAsync();
-            using SqlCommand command = new SqlCommand("SELECT COUNT(1) FROM Employees", connection);
-
+            await using SqlCommand command = new("SELECT COUNT(1) FROM Employees", connection);
             object? result = await command.ExecuteScalarAsync();
-
             return result == null ? 0 : Convert.ToInt32(result);
         }
 
         public async Task<int> GetActiveEmployeeCountAsync()
         {
             await using SqlConnection connection = await _connectionFactory.CreateOpenConnectionAsync();
-            using SqlCommand command = new SqlCommand("SELECT COUNT(1) FROM Employees WHERE IsActive = 1", connection);
-
+            await using SqlCommand command = new("SELECT COUNT(1) FROM Employees WHERE IsActive = 1", connection);
             object? result = await command.ExecuteScalarAsync();
-
             return result == null ? 0 : Convert.ToInt32(result);
+        }
+
+        private static void AddEmployeeParameters(SqlCommand command, EmployeeDto employee, bool includeEmployeeId)
+        {
+            if (includeEmployeeId)
+                command.Parameters.AddWithValue("@EmployeeId", employee.EmployeeId);
+
+            command.Parameters.AddWithValue("@EmployeeCode", employee.EmployeeCode.Trim());
+            command.Parameters.AddWithValue("@FirstName", employee.FirstName.Trim());
+            command.Parameters.AddWithValue("@LastName", (object?)employee.LastName?.Trim() ?? DBNull.Value);
+            command.Parameters.AddWithValue("@Gender", employee.Gender.Trim());
+            command.Parameters.AddWithValue("@DateOfBirth", employee.DateOfBirth.Date);
+            command.Parameters.AddWithValue("@MobileNumber", employee.MobileNumber.Trim());
+            command.Parameters.AddWithValue("@Email", employee.Email.Trim());
+            command.Parameters.AddWithValue("@DepartmentId", employee.DepartmentId);
+            command.Parameters.AddWithValue("@ManagerId", (object?)employee.ManagerId ?? DBNull.Value);
+            command.Parameters.AddWithValue("@JoinDate", employee.JoinDate.Date);
+            command.Parameters.AddWithValue("@Salary", employee.Salary);
+            command.Parameters.AddWithValue("@Address", (object?)employee.Address?.Trim() ?? DBNull.Value);
+        }
+
+        private static SqlParameter AddReturnValue(SqlCommand command)
+        {
+            SqlParameter returnValue = new("@ReturnValue", SqlDbType.Int)
+            {
+                Direction = ParameterDirection.ReturnValue
+            };
+            command.Parameters.Add(returnValue);
+            return returnValue;
+        }
+
+        private static int ReadReturnValue(SqlParameter returnValue)
+        {
+            if (returnValue.Value == null || returnValue.Value == DBNull.Value)
+                return 0;
+
+            return Convert.ToInt32(returnValue.Value);
+        }
+
+        private static EmployeeDto MapEmployee(SqlDataReader reader)
+        {
+            return new EmployeeDto
+            {
+                EmployeeId = Convert.ToInt32(reader["EmployeeId"]),
+                EmployeeCode = reader["EmployeeCode"].ToString()!,
+                FirstName = reader["FirstName"].ToString()!,
+                LastName = reader["LastName"] == DBNull.Value ? null : reader["LastName"].ToString(),
+                Gender = reader["Gender"].ToString()!,
+                DateOfBirth = Convert.ToDateTime(reader["DateOfBirth"]),
+                MobileNumber = reader["MobileNumber"].ToString()!,
+                Email = reader["Email"].ToString()!,
+                DepartmentId = Convert.ToInt32(reader["DepartmentId"]),
+                ManagerId = reader["ManagerId"] == DBNull.Value ? null : Convert.ToInt32(reader["ManagerId"]),
+                JoinDate = Convert.ToDateTime(reader["JoinDate"]),
+                Salary = Convert.ToDecimal(reader["Salary"]),
+                Address = reader["Address"] == DBNull.Value ? null : reader["Address"].ToString(),
+                IsActive = Convert.ToBoolean(reader["IsActive"])
+            };
         }
     }
 }

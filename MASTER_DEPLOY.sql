@@ -34,6 +34,7 @@ GO
 IF OBJECT_ID(N'dbo.trg_Employees_Audit', N'TR') IS NOT NULL DROP TRIGGER dbo.trg_Employees_Audit;
 IF OBJECT_ID(N'dbo.trg_Leaves_Audit', N'TR') IS NOT NULL DROP TRIGGER dbo.trg_Leaves_Audit;
 IF OBJECT_ID(N'dbo.trg_LeaveRequests_Audit', N'TR') IS NOT NULL DROP TRIGGER dbo.trg_LeaveRequests_Audit;
+IF OBJECT_ID(N'dbo.trg_Users_Audit', N'TR') IS NOT NULL DROP TRIGGER dbo.trg_Users_Audit;
 GO
 
 IF OBJECT_ID(N'dbo.LeaveRequestsArchive', N'U') IS NOT NULL DROP TABLE dbo.LeaveRequestsArchive;
@@ -236,6 +237,61 @@ BEGIN
 END
 GO
 
+CREATE TRIGGER dbo.trg_Users_Audit
+ON dbo.Users
+AFTER INSERT, UPDATE, DELETE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Password hashes are redacted in audit payloads.
+    INSERT INTO dbo.AuditLogs (TableName, RecordId, ActionType, OldValue, NewValue, ChangedBy)
+    SELECT
+        N'Users',
+        COALESCE(i.UserId, d.UserId),
+        CASE
+            WHEN i.UserId IS NOT NULL AND d.UserId IS NULL THEN N'Insert'
+            WHEN i.UserId IS NOT NULL AND d.UserId IS NOT NULL THEN N'Update'
+            ELSE N'Delete'
+        END,
+        CASE
+            WHEN d.UserId IS NULL THEN NULL
+            ELSE (
+                SELECT
+                    d.UserId,
+                    d.UserName,
+                    N'***' AS PasswordHash,
+                    d.Email,
+                    d.RoleId,
+                    d.EmployeeId,
+                    d.IsActive,
+                    d.CreatedDate,
+                    d.ModifiedDate
+                FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+            )
+        END,
+        CASE
+            WHEN i.UserId IS NULL THEN NULL
+            ELSE (
+                SELECT
+                    i.UserId,
+                    i.UserName,
+                    N'***' AS PasswordHash,
+                    i.Email,
+                    i.RoleId,
+                    i.EmployeeId,
+                    i.IsActive,
+                    i.CreatedDate,
+                    i.ModifiedDate
+                FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+            )
+        END,
+        CONCAT(SUSER_SNAME(), N' | ', APP_NAME())
+    FROM inserted i
+    FULL OUTER JOIN deleted d ON i.UserId = d.UserId;
+END
+GO
+
 /* ===========================
    5) EMPLOYEE STORED PROCEDURES
    =========================== */
@@ -251,10 +307,23 @@ CREATE OR ALTER PROCEDURE dbo.sp_AddEmployee
     @ManagerId      INT = NULL,
     @JoinDate       DATE,
     @Salary         DECIMAL(18,2),
-    @Address        NVARCHAR(500) = NULL
+    @Address        NVARCHAR(500) = NULL,
+    @NewEmployeeId  INT OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
+    SET @NewEmployeeId = 0;
+
+    IF NOT EXISTS (SELECT 1 FROM dbo.Departments WHERE DepartmentId = @DepartmentId)
+        RETURN -1;
+
+    IF EXISTS (SELECT 1 FROM dbo.Employees WHERE EmployeeCode = @EmployeeCode)
+        RETURN -2;
+
+    IF @ManagerId IS NOT NULL
+       AND NOT EXISTS (SELECT 1 FROM dbo.Employees WHERE EmployeeId = @ManagerId AND IsActive = 1)
+        RETURN -3;
+
     INSERT INTO dbo.Employees (
         EmployeeCode, FirstName, LastName, Gender, DateOfBirth, MobileNumber, Email,
         DepartmentId, ManagerId, JoinDate, Salary, Address
@@ -263,6 +332,9 @@ BEGIN
         @EmployeeCode, @FirstName, @LastName, @Gender, @DateOfBirth, @MobileNumber, @Email,
         @DepartmentId, @ManagerId, @JoinDate, @Salary, @Address
     );
+
+    SET @NewEmployeeId = SCOPE_IDENTITY();
+    RETURN @NewEmployeeId;
 END
 GO
 
@@ -279,10 +351,33 @@ CREATE OR ALTER PROCEDURE dbo.sp_UpdateEmployee
     @ManagerId      INT = NULL,
     @JoinDate       DATE,
     @Salary         DECIMAL(18,2),
-    @Address        NVARCHAR(500) = NULL
+    @Address        NVARCHAR(500) = NULL,
+    @IsActive       BIT = 1
 AS
 BEGIN
     SET NOCOUNT ON;
+
+    IF NOT EXISTS (SELECT 1 FROM dbo.Employees WHERE EmployeeId = @EmployeeId)
+        RETURN -1;
+
+    IF NOT EXISTS (SELECT 1 FROM dbo.Departments WHERE DepartmentId = @DepartmentId)
+        RETURN -2;
+
+    IF EXISTS (
+        SELECT 1
+        FROM dbo.Employees
+        WHERE EmployeeCode = @EmployeeCode
+          AND EmployeeId <> @EmployeeId
+    )
+        RETURN -3;
+
+    IF @ManagerId IS NOT NULL AND @ManagerId = @EmployeeId
+        RETURN -5;
+
+    IF @ManagerId IS NOT NULL
+       AND NOT EXISTS (SELECT 1 FROM dbo.Employees WHERE EmployeeId = @ManagerId AND IsActive = 1)
+        RETURN -4;
+
     UPDATE dbo.Employees
     SET EmployeeCode = @EmployeeCode,
         FirstName = @FirstName,
@@ -295,8 +390,11 @@ BEGIN
         ManagerId = @ManagerId,
         JoinDate = @JoinDate,
         Salary = @Salary,
-        Address = @Address
+        Address = @Address,
+        IsActive = @IsActive
     WHERE EmployeeId = @EmployeeId;
+
+    RETURN 1;
 END
 GO
 
@@ -305,7 +403,19 @@ CREATE OR ALTER PROCEDURE dbo.sp_DeleteEmployee
 AS
 BEGIN
     SET NOCOUNT ON;
-    UPDATE dbo.Employees SET IsActive = 0 WHERE EmployeeId = @EmployeeId;
+
+    IF NOT EXISTS (SELECT 1 FROM dbo.Employees WHERE EmployeeId = @EmployeeId)
+        RETURN -1;
+
+    IF EXISTS (SELECT 1 FROM dbo.Employees WHERE EmployeeId = @EmployeeId AND IsActive = 0)
+        RETURN -2;
+
+    UPDATE dbo.Employees
+    SET IsActive = 0
+    WHERE EmployeeId = @EmployeeId
+      AND IsActive = 1;
+
+    RETURN 1;
 END
 GO
 
@@ -325,7 +435,10 @@ BEGIN
         lr.TotalDays,
         lr.Reason,
         lr.Status,
-        lr.Remarks
+        lr.ApprovedBy,
+        lr.ApprovedDate,
+        lr.Remarks,
+        lr.IsCancelled
     FROM dbo.LeaveRequests lr
     WHERE lr.IsCancelled = 0
     ORDER BY lr.CreatedDate DESC;
@@ -365,6 +478,30 @@ CREATE OR ALTER PROCEDURE dbo.sp_ApplyLeave
 AS
 BEGIN
     SET NOCOUNT ON;
+    SET @NewLeaveRequestId = 0;
+
+    IF @StartDate IS NULL OR @EndDate IS NULL OR @StartDate > @EndDate
+        RETURN -3;
+
+    IF @Reason IS NULL OR LTRIM(RTRIM(@Reason)) = N''
+        RETURN 0;
+
+    IF NOT EXISTS (SELECT 1 FROM dbo.Employees WHERE EmployeeId = @EmployeeId AND IsActive = 1)
+        RETURN -1;
+
+    IF NOT EXISTS (SELECT 1 FROM dbo.LeaveTypes WHERE LeaveTypeId = @LeaveTypeId AND IsActive = 1)
+        RETURN -2;
+
+    IF EXISTS (
+        SELECT 1
+        FROM dbo.LeaveRequests
+        WHERE EmployeeId = @EmployeeId
+          AND IsCancelled = 0
+          AND Status IN (N'Pending', N'Approved')
+          AND StartDate <= @EndDate
+          AND EndDate >= @StartDate
+    )
+        RETURN -4;
 
     INSERT INTO dbo.LeaveRequests (EmployeeId, LeaveTypeId, StartDate, EndDate, Reason, Status)
     VALUES (@EmployeeId, @LeaveTypeId, @StartDate, @EndDate, @Reason, N'Pending');
@@ -383,6 +520,25 @@ CREATE OR ALTER PROCEDURE dbo.sp_UpdateLeave
 AS
 BEGIN
     SET NOCOUNT ON;
+
+    IF NOT EXISTS (SELECT 1 FROM dbo.LeaveRequests WHERE LeaveRequestId = @LeaveRequestId)
+        RETURN -1;
+
+    IF NOT EXISTS (
+        SELECT 1
+        FROM dbo.LeaveRequests
+        WHERE LeaveRequestId = @LeaveRequestId
+          AND Status = N'Pending'
+          AND IsCancelled = 0
+    )
+        RETURN -2;
+
+    IF NOT EXISTS (SELECT 1 FROM dbo.LeaveTypes WHERE LeaveTypeId = @LeaveTypeId AND IsActive = 1)
+        RETURN -3;
+
+    IF @StartDate IS NULL OR @EndDate IS NULL OR @StartDate > @EndDate
+        RETURN -4;
+
     UPDATE dbo.LeaveRequests
     SET LeaveTypeId = @LeaveTypeId,
         StartDate = @StartDate,
@@ -392,6 +548,8 @@ BEGIN
     WHERE LeaveRequestId = @LeaveRequestId
       AND Status = N'Pending'
       AND IsCancelled = 0;
+
+    RETURN 1;
 END
 GO
 
@@ -400,11 +558,17 @@ CREATE OR ALTER PROCEDURE dbo.sp_CancelLeave
 AS
 BEGIN
     SET NOCOUNT ON;
+
+    IF NOT EXISTS (SELECT 1 FROM dbo.LeaveRequests WHERE LeaveRequestId = @LeaveRequestId)
+        RETURN -1;
+
     UPDATE dbo.LeaveRequests
     SET IsCancelled = 1,
         Status = N'Cancelled',
         ModifiedDate = SYSUTCDATETIME()
     WHERE LeaveRequestId = @LeaveRequestId;
+
+    RETURN 1;
 END
 GO
 
@@ -415,6 +579,22 @@ CREATE OR ALTER PROCEDURE dbo.sp_ApproveLeave
 AS
 BEGIN
     SET NOCOUNT ON;
+
+    IF NOT EXISTS (SELECT 1 FROM dbo.LeaveRequests WHERE LeaveRequestId = @LeaveRequestId)
+        RETURN -1;
+
+    IF NOT EXISTS (
+        SELECT 1
+        FROM dbo.LeaveRequests
+        WHERE LeaveRequestId = @LeaveRequestId
+          AND Status = N'Pending'
+          AND IsCancelled = 0
+    )
+        RETURN -2;
+
+    IF NOT EXISTS (SELECT 1 FROM dbo.Employees WHERE EmployeeId = @ApprovedBy AND IsActive = 1)
+        RETURN -3;
+
     UPDATE dbo.LeaveRequests
     SET Status = N'Approved',
         ApprovedBy = @ApprovedBy,
@@ -422,7 +602,10 @@ BEGIN
         Remarks = @Remarks,
         ModifiedDate = SYSUTCDATETIME()
     WHERE LeaveRequestId = @LeaveRequestId
+      AND Status = N'Pending'
       AND IsCancelled = 0;
+
+    RETURN 1;
 END
 GO
 
@@ -433,6 +616,22 @@ CREATE OR ALTER PROCEDURE dbo.sp_RejectLeave
 AS
 BEGIN
     SET NOCOUNT ON;
+
+    IF NOT EXISTS (SELECT 1 FROM dbo.LeaveRequests WHERE LeaveRequestId = @LeaveRequestId)
+        RETURN -1;
+
+    IF NOT EXISTS (
+        SELECT 1
+        FROM dbo.LeaveRequests
+        WHERE LeaveRequestId = @LeaveRequestId
+          AND Status = N'Pending'
+          AND IsCancelled = 0
+    )
+        RETURN -2;
+
+    IF NOT EXISTS (SELECT 1 FROM dbo.Employees WHERE EmployeeId = @ApprovedBy AND IsActive = 1)
+        RETURN -3;
+
     UPDATE dbo.LeaveRequests
     SET Status = N'Rejected',
         ApprovedBy = @ApprovedBy,
@@ -440,7 +639,10 @@ BEGIN
         Remarks = @Remarks,
         ModifiedDate = SYSUTCDATETIME()
     WHERE LeaveRequestId = @LeaveRequestId
+      AND Status = N'Pending'
       AND IsCancelled = 0;
+
+    RETURN 1;
 END
 GO
 
@@ -458,7 +660,10 @@ BEGIN
         lr.TotalDays,
         lr.Reason,
         lr.Status,
-        lr.Remarks
+        lr.ApprovedBy,
+        lr.ApprovedDate,
+        lr.Remarks,
+        lr.IsCancelled
     FROM dbo.LeaveRequests lr
     WHERE lr.EmployeeId = @EmployeeId
       AND lr.IsCancelled = 0
@@ -478,7 +683,11 @@ BEGIN
         lr.EndDate,
         lr.TotalDays,
         lr.Reason,
-        lr.Status
+        lr.Status,
+        lr.ApprovedBy,
+        lr.ApprovedDate,
+        lr.Remarks,
+        lr.IsCancelled
     FROM dbo.LeaveRequests lr
     WHERE lr.Status = N'Pending'
       AND lr.IsCancelled = 0
@@ -500,7 +709,11 @@ BEGIN
         lr.EndDate,
         lr.TotalDays,
         lr.Reason,
-        lr.Status
+        lr.Status,
+        lr.ApprovedBy,
+        lr.ApprovedDate,
+        lr.Remarks,
+        lr.IsCancelled
     FROM dbo.LeaveRequests lr
     WHERE lr.IsCancelled = 0
       AND lr.StartDate >= @FromDate
@@ -534,10 +747,16 @@ CREATE OR ALTER PROCEDURE dbo.sp_EmployeeLeaveSummary
     @FromDate      DATE = NULL,
     @ToDate        DATE = NULL,
     @DepartmentId  INT = NULL,
-    @EmployeeId    INT = NULL
+    @EmployeeId    INT = NULL,
+    @EmployeeName  NVARCHAR(250) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
+
+    DECLARE @NamePattern NVARCHAR(252) = NULL;
+    IF @EmployeeName IS NOT NULL AND LTRIM(RTRIM(@EmployeeName)) <> N''
+        SET @NamePattern = N'%' + LTRIM(RTRIM(@EmployeeName)) + N'%';
+
     SELECT
         e.EmployeeId,
         e.EmployeeCode,
@@ -557,16 +776,30 @@ BEGIN
       AND (@ToDate IS NULL OR lr.EndDate <= @ToDate)
       AND (@DepartmentId IS NULL OR e.DepartmentId = @DepartmentId)
       AND (@EmployeeId IS NULL OR e.EmployeeId = @EmployeeId)
+      AND (
+            @NamePattern IS NULL
+            OR e.FirstName LIKE @NamePattern
+            OR e.LastName LIKE @NamePattern
+            OR CONCAT(e.FirstName, N' ', ISNULL(e.LastName, N'')) LIKE @NamePattern
+            OR e.EmployeeCode LIKE @NamePattern
+          )
     ORDER BY lr.StartDate DESC;
 END
 GO
 
 CREATE OR ALTER PROCEDURE dbo.sp_MonthlyLeaveUtilization
-    @Year INT = NULL
+    @Year          INT = NULL,
+    @DepartmentId  INT = NULL,
+    @EmployeeId    INT = NULL,
+    @EmployeeName  NVARCHAR(250) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
     IF @Year IS NULL SET @Year = YEAR(GETDATE());
+
+    DECLARE @NamePattern NVARCHAR(252) = NULL;
+    IF @EmployeeName IS NOT NULL AND LTRIM(RTRIM(@EmployeeName)) <> N''
+        SET @NamePattern = N'%' + LTRIM(RTRIM(@EmployeeName)) + N'%';
 
     SELECT
         e.EmployeeId,
@@ -582,6 +815,15 @@ BEGIN
     INNER JOIN dbo.LeaveTypes lt ON lt.LeaveTypeId = lr.LeaveTypeId
     WHERE lr.IsCancelled = 0
       AND YEAR(lr.StartDate) = @Year
+      AND (@DepartmentId IS NULL OR e.DepartmentId = @DepartmentId)
+      AND (@EmployeeId IS NULL OR e.EmployeeId = @EmployeeId)
+      AND (
+            @NamePattern IS NULL
+            OR e.FirstName LIKE @NamePattern
+            OR e.LastName LIKE @NamePattern
+            OR CONCAT(e.FirstName, N' ', ISNULL(e.LastName, N'')) LIKE @NamePattern
+            OR e.EmployeeCode LIKE @NamePattern
+          )
     GROUP BY e.EmployeeId, e.EmployeeCode, e.FirstName, e.LastName, d.DepartmentName, lt.LeaveTypeName
     ORDER BY d.DepartmentName, EmployeeName;
 END
@@ -608,9 +850,19 @@ END
 GO
 
 CREATE OR ALTER PROCEDURE dbo.sp_PendingLeaveRequests
+    @FromDate      DATE = NULL,
+    @ToDate        DATE = NULL,
+    @DepartmentId  INT = NULL,
+    @EmployeeId    INT = NULL,
+    @EmployeeName  NVARCHAR(250) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
+
+    DECLARE @NamePattern NVARCHAR(252) = NULL;
+    IF @EmployeeName IS NOT NULL AND LTRIM(RTRIM(@EmployeeName)) <> N''
+        SET @NamePattern = N'%' + LTRIM(RTRIM(@EmployeeName)) + N'%';
+
     SELECT
         lr.LeaveRequestId,
         e.EmployeeCode,
@@ -627,6 +879,17 @@ BEGIN
     INNER JOIN dbo.LeaveTypes lt ON lt.LeaveTypeId = lr.LeaveTypeId
     WHERE lr.Status = N'Pending'
       AND lr.IsCancelled = 0
+      AND (@FromDate IS NULL OR lr.StartDate >= @FromDate)
+      AND (@ToDate IS NULL OR lr.EndDate <= @ToDate)
+      AND (@DepartmentId IS NULL OR e.DepartmentId = @DepartmentId)
+      AND (@EmployeeId IS NULL OR e.EmployeeId = @EmployeeId)
+      AND (
+            @NamePattern IS NULL
+            OR e.FirstName LIKE @NamePattern
+            OR e.LastName LIKE @NamePattern
+            OR CONCAT(e.FirstName, N' ', ISNULL(e.LastName, N'')) LIKE @NamePattern
+            OR e.EmployeeCode LIKE @NamePattern
+          )
     ORDER BY lr.StartDate;
 END
 GO
@@ -691,16 +954,32 @@ BEGIN
     SET NOCOUNT ON;
     IF @Year IS NULL SET @Year = YEAR(GETDATE());
 
+    ;WITH Monthly AS (
+        SELECT
+            MONTH(lr.StartDate) AS [Month],
+            YEAR(lr.StartDate) AS [Year],
+            COUNT(*) AS TotalLeaves,
+            SUM(lr.TotalDays) AS TotalDays
+        FROM dbo.LeaveRequests lr
+        WHERE lr.IsCancelled = 0
+          AND YEAR(lr.StartDate) = @Year
+        GROUP BY YEAR(lr.StartDate), MONTH(lr.StartDate)
+    )
     SELECT
-        MONTH(lr.StartDate) AS [Month],
-        YEAR(lr.StartDate) AS [Year],
-        COUNT(*) AS TotalLeaves,
-        SUM(lr.TotalDays) AS TotalDays
-    FROM dbo.LeaveRequests lr
-    WHERE lr.IsCancelled = 0
-      AND YEAR(lr.StartDate) = @Year
-    GROUP BY YEAR(lr.StartDate), MONTH(lr.StartDate)
-    ORDER BY [Month];
+        m.[Year],
+        m.[Month],
+        m.TotalLeaves,
+        m.TotalDays,
+        CASE
+            WHEN LAG(m.TotalDays) OVER (ORDER BY m.[Month]) IS NULL
+              OR LAG(m.TotalDays) OVER (ORDER BY m.[Month]) = 0 THEN NULL
+            ELSE CAST(
+                (m.TotalDays - LAG(m.TotalDays) OVER (ORDER BY m.[Month])) * 100.0
+                / LAG(m.TotalDays) OVER (ORDER BY m.[Month]) AS DECIMAL(18,2)
+            )
+        END AS MonthOverMonthChangePercent
+    FROM Monthly m
+    ORDER BY m.[Month];
 END
 GO
 
@@ -712,9 +991,14 @@ BEGIN
     IF @Year IS NULL SET @Year = YEAR(GETDATE());
 
     SELECT
+        @Year AS [Year],
         d.DepartmentName,
         COUNT(lr.LeaveRequestId) AS TotalLeaves,
-        ISNULL(SUM(lr.TotalDays), 0) AS TotalDays
+        ISNULL(SUM(lr.TotalDays), 0) AS TotalDays,
+        CASE
+            WHEN COUNT(lr.LeaveRequestId) = 0 THEN CAST(0 AS DECIMAL(18,2))
+            ELSE CAST(ISNULL(SUM(lr.TotalDays), 0) AS DECIMAL(18,2)) / COUNT(lr.LeaveRequestId)
+        END AS AverageLeaveDays
     FROM dbo.Departments d
     LEFT JOIN dbo.Employees e ON e.DepartmentId = d.DepartmentId AND e.IsActive = 1
     LEFT JOIN dbo.LeaveRequests lr ON lr.EmployeeId = e.EmployeeId

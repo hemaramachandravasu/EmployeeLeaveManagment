@@ -19,7 +19,7 @@ This solution exposes reporting and analytics capabilities built in Tasks 2–3 
 | DAL | ADO.NET repositories | SQL execution via stored procedures |
 | Database | SQL Server | Schema, SPs, triggers, audit, analytics |
 
-Background `ReportSchedulerService` writes scheduled CSV reports to `C:\Reports` (configurable).
+Background `ReportSchedulerService` writes scheduled **CSV and Excel** reports to `C:\Reports` (configurable via `Reporting:OutputFolder`), including reporting and analytics packs.
 
 ---
 
@@ -37,9 +37,9 @@ Thin controllers delegate to `IReportService` → `IReportRepository` (ADO.NET).
 **Export endpoints (POST):**
 - Excel/CSV for employee summary and department statistics via ClosedXML and CSV builders in `ReportRepository`.
 
-**Filter DTO:** `ReportFilterDto` — `FromDate`, `ToDate`, `DepartmentId`, `EmployeeId`, `Year`, `Month`
+**Filter DTO:** `ReportFilterDto` — `FromDate`, `ToDate`, `DepartmentId`, `EmployeeId`, `EmployeeName`, `Year`, `Month`
 
-**Validation:** `ReportFilterValidator` enforces date range, year/month bounds, and positive IDs.
+**Validation:** `ReportFilterValidator` enforces date range, year/month bounds, positive IDs, and `EmployeeName` length (max 250).
 
 ---
 
@@ -128,16 +128,24 @@ sqlcmd -S <server> -E -C -i MASTER_DEPLOY.sql
 
 ---
 
-## 10. Testing (Task 5.6)
+## 10. Testing, Caching & Deployment (Task 4)
 
-**Test project:** `EmployeeLeaveManagment.Tests`
+See full runbook: [TASK4_TESTING_CACHING_DEPLOYMENT.md](TASK4_TESTING_CACHING_DEPLOYMENT.md)
+
+**Test project:** `EmployeeLeaveManagment.Tests` (xUnit + Moq)
 
 | Test class | Coverage |
 |------------|----------|
-| `AnalyticsRepositoryTests` | Leave trend analytics service |
+| `ReportServiceCachingTests` | Moq: cache hit/miss, filter pass-through, exceptions, export |
+| `ReportServiceLegacyTests` | Pending rows + CSV smoke |
 | `ReportFilterValidatorTests` | Filter validation rules |
-| `ReportServiceTests` | Report queries and CSV export |
+| `AnalyticsRepositoryTests` | Analytics service DTOs |
 | `AuthAndDashboardTests` | Password hashing, dashboard feeds |
+| `Task1ValidationTests` | Leave/employee validators |
+
+**Caching:** `IMemoryCache` via `ReportService` for department statistics, employee summary, and monthly utilization (`Reporting:CacheMinutes`, default 10).
+
+**CI:** `.github/workflows/ci.yml` — build, unit tests, SQL script structure validation.
 
 Run: `dotnet test`
 

@@ -1,11 +1,10 @@
 ﻿using EmployeeLeaveManagment.DTOs;
 using EmployeeLeaveManagment.Services;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 
 namespace EmployeeLeaveManagment.Controllers
 {
-
     [ApiController]
     [Route("api/[controller]")]
     public class DepartmentController : ControllerBase
@@ -20,19 +19,36 @@ namespace EmployeeLeaveManagment.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAllDepartments()
         {
-            var departments = await _departmentService.GetAllDepartmentsAsync();
-            return Ok(departments);
+            try
+            {
+                var departments = await _departmentService.GetAllDepartmentsAsync();
+                return Ok(departments);
+            }
+            catch (SqlException ex)
+            {
+                return DatabaseError(ex);
+            }
         }
 
-        [HttpGet("{id}")]
+        [HttpGet("{id:int}")]
         public async Task<IActionResult> GetDepartmentById(int id)
         {
-            var department = await _departmentService.GetDepartmentByIdAsync(id);
+            if (id <= 0)
+                return BadRequest(new { Message = "id must be a positive integer." });
 
-            if (department == null)
-                return NotFound();
+            try
+            {
+                var department = await _departmentService.GetDepartmentByIdAsync(id);
 
-            return Ok(department);
+                if (department == null)
+                    return NotFound(new { Message = $"Department {id} was not found." });
+
+                return Ok(department);
+            }
+            catch (SqlException ex)
+            {
+                return DatabaseError(ex);
+            }
         }
 
         [HttpPost]
@@ -41,18 +57,31 @@ namespace EmployeeLeaveManagment.Controllers
             if (department == null)
                 return BadRequest(new { Message = "Department request body is required." });
 
+            if (string.IsNullOrWhiteSpace(department.DepartmentCode))
+                return BadRequest(new { Message = "DepartmentCode is required." });
+
+            if (string.IsNullOrWhiteSpace(department.DepartmentName))
+                return BadRequest(new { Message = "DepartmentName is required." });
+
             if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+                return ValidationProblem(ModelState);
 
-            var result = await _departmentService.AddDepartmentAsync(department);
+            try
+            {
+                var result = await _departmentService.AddDepartmentAsync(department);
 
-            if (result == -1)
-                return BadRequest(new { Message = "Department already exists." });
+                if (result == -1)
+                    return BadRequest(new { Message = "Department already exists." });
 
-            if (result > 0)
-                return Ok(new { Message = "Department added successfully." });
+                if (result > 0)
+                    return Ok(new { Message = "Department added successfully." });
 
-            return BadRequest(new { Message = "Unable to add department. Verify request body values." });
+                return BadRequest(new { Message = "Unable to add department. Verify request body values." });
+            }
+            catch (SqlException ex)
+            {
+                return DatabaseError(ex);
+            }
         }
 
         [HttpPut]
@@ -61,29 +90,68 @@ namespace EmployeeLeaveManagment.Controllers
             if (department == null)
                 return BadRequest(new { Message = "Department request body is required." });
 
+            if (department.DepartmentId <= 0)
+                return BadRequest(new { Message = "DepartmentId must be a positive integer." });
+
+            if (string.IsNullOrWhiteSpace(department.DepartmentCode))
+                return BadRequest(new { Message = "DepartmentCode is required." });
+
+            if (string.IsNullOrWhiteSpace(department.DepartmentName))
+                return BadRequest(new { Message = "DepartmentName is required." });
+
             if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+                return ValidationProblem(ModelState);
 
-            var result = await _departmentService.UpdateDepartmentAsync(department);
+            try
+            {
+                var result = await _departmentService.UpdateDepartmentAsync(department);
 
-            if (result > 0)
-                return Ok(new { Message = "Department updated successfully." });
+                if (result > 0)
+                    return Ok(new { Message = "Department updated successfully." });
 
-            return BadRequest(new { Message = "Unable to update department. Verify request body values." });
+                return BadRequest(new { Message = "Unable to update department. Verify request body values." });
+            }
+            catch (SqlException ex)
+            {
+                return DatabaseError(ex);
+            }
         }
 
-        [HttpDelete("{id}")]
+        [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteDepartment(int id)
         {
-            var result = await _departmentService.DeleteDepartmentAsync(id);
+            if (id <= 0)
+                return BadRequest(new { Message = "id must be a positive integer." });
 
-            if (result > 0)
-                return Ok(new { Message = "Department deleted successfully." });
+            try
+            {
+                var result = await _departmentService.DeleteDepartmentAsync(id);
 
-            if (result == -2)
-                return BadRequest(new { Message = "Department cannot be deleted because it is referenced by other records." });
+                if (result > 0)
+                    return Ok(new { Message = "Department deleted successfully." });
 
-            return NotFound(new { Message = "Department not found." });
+                if (result == -2)
+                    return BadRequest(new { Message = "Department cannot be deleted because it is referenced by other records." });
+
+                return NotFound(new { Message = "Department not found." });
+            }
+            catch (SqlException ex)
+            {
+                return DatabaseError(ex);
+            }
+        }
+
+        private ObjectResult DatabaseError(SqlException ex)
+        {
+            var pd = new ProblemDetails
+            {
+                Title = "Database error",
+                Detail = ex.Message,
+                Status = StatusCodes.Status500InternalServerError,
+                Type = "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+            };
+
+            return StatusCode(StatusCodes.Status500InternalServerError, pd);
         }
     }
 }

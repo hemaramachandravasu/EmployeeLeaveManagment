@@ -34,6 +34,9 @@ namespace EmployeeLeaveManagment.Data
             command.Parameters.AddWithValue("@ToDate", filter.ToDate ?? (object)DBNull.Value);
             command.Parameters.AddWithValue("@DepartmentId", filter.DepartmentId ?? (object)DBNull.Value);
             command.Parameters.AddWithValue("@EmployeeId", filter.EmployeeId ?? (object)DBNull.Value);
+            command.Parameters.AddWithValue(
+                "@EmployeeName",
+                string.IsNullOrWhiteSpace(filter.EmployeeName) ? DBNull.Value : filter.EmployeeName.Trim());
 
             using SqlDataReader reader = await command.ExecuteReaderAsync();
 
@@ -67,6 +70,11 @@ namespace EmployeeLeaveManagment.Data
             command.CommandType = CommandType.StoredProcedure;
 
             command.Parameters.AddWithValue("@Year", filter.Year ?? (object)DBNull.Value);
+            command.Parameters.AddWithValue("@DepartmentId", filter.DepartmentId ?? (object)DBNull.Value);
+            command.Parameters.AddWithValue("@EmployeeId", filter.EmployeeId ?? (object)DBNull.Value);
+            command.Parameters.AddWithValue(
+                "@EmployeeName",
+                string.IsNullOrWhiteSpace(filter.EmployeeName) ? DBNull.Value : filter.EmployeeName.Trim());
 
             using SqlDataReader reader = await command.ExecuteReaderAsync();
 
@@ -113,14 +121,22 @@ namespace EmployeeLeaveManagment.Data
 
             return reports;
         }
-        public async Task<IEnumerable<ReportDto>> GetPendingLeaveRequestsAsync()
+        public async Task<IEnumerable<ReportDto>> GetPendingLeaveRequestsAsync(ReportFilterDto? filter = null)
         {
+            filter ??= new ReportFilterDto();
             List<ReportDto> reports = new();
 
             await using SqlConnection connection = await _connectionFactory.CreateReportViewerConnectionAsync();
             using SqlCommand command = new("sp_PendingLeaveRequests", connection);
 
             command.CommandType = CommandType.StoredProcedure;
+            command.Parameters.AddWithValue("@FromDate", filter.FromDate ?? (object)DBNull.Value);
+            command.Parameters.AddWithValue("@ToDate", filter.ToDate ?? (object)DBNull.Value);
+            command.Parameters.AddWithValue("@DepartmentId", filter.DepartmentId ?? (object)DBNull.Value);
+            command.Parameters.AddWithValue("@EmployeeId", filter.EmployeeId ?? (object)DBNull.Value);
+            command.Parameters.AddWithValue(
+                "@EmployeeName",
+                string.IsNullOrWhiteSpace(filter.EmployeeName) ? DBNull.Value : filter.EmployeeName.Trim());
 
             using SqlDataReader reader = await command.ExecuteReaderAsync();
 

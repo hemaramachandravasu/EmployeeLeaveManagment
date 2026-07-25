@@ -1,0 +1,2 @@
+EmployeeCode,EmployeeName,Department,LeaveType,StartDate,EndDate,TotalDays,Status
+EMP003,Carol Lee,Human Resources,Casual Leave,2026-03-01,2026-03-01,1,Pending

@@ -24,6 +24,9 @@ public static class ReportFilterValidator
         if (filter.EmployeeId.HasValue && filter.EmployeeId <= 0)
             return "EmployeeId must be greater than zero.";
 
+        if (!string.IsNullOrWhiteSpace(filter.EmployeeName) && filter.EmployeeName.Trim().Length > 250)
+            return "EmployeeName cannot exceed 250 characters.";
+
         return null;
     }
 }

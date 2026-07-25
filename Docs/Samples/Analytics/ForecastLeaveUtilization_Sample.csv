@@ -1,0 +1,4 @@
+DepartmentName,LeaveType,ForecastLeaveCount,ForecastAverageDays
+Engineering,Annual Leave,3,3.50
+Engineering,Sick Leave,2,2.00
+Human Resources,Casual Leave,2,1.50

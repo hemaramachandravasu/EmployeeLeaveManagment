@@ -13,7 +13,7 @@ namespace EmployeeLeaveManagment.Services
 
         Task<IEnumerable<ReportDto>> GetDepartmentLeaveStatisticsAsync(ReportFilterDto filter);
 
-        Task<IEnumerable<ReportDto>> GetPendingLeaveRequestsAsync();
+        Task<IEnumerable<ReportDto>> GetPendingLeaveRequestsAsync(ReportFilterDto? filter = null);
 
         Task<byte[]> ExportEmployeeLeaveSummaryExcelAsync(ReportFilterDto filter);
 

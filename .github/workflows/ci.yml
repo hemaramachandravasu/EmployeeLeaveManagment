@@ -18,12 +18,38 @@ jobs:
           dotnet-version: '10.0.x'
 
       - name: Restore
-        run: dotnet restore EmployeeLeaveManagment/EmployeeLeaveManagment.csproj
+        run: dotnet restore EmployeeLeaveManagment.slnx
 
       - name: Build
         run: |
-          dotnet build EmployeeLeaveManagment/EmployeeLeaveManagment.csproj -c Release
-          dotnet build EmployeeLeaveManagment.Tests/EmployeeLeaveManagment.Tests.csproj -c Release
+          dotnet build EmployeeLeaveManagment/EmployeeLeaveManagment.csproj -c Release --no-restore
+          dotnet build EmployeeLeaveManagment.Tests/EmployeeLeaveManagment.Tests.csproj -c Release --no-restore
 
       - name: Unit tests
-        run: dotnet test EmployeeLeaveManagment.Tests/EmployeeLeaveManagment.Tests.csproj -c Release --filter "Category!=Integration"
+        run: dotnet test EmployeeLeaveManagment.Tests/EmployeeLeaveManagment.Tests.csproj -c Release --no-build --filter "Category!=Integration"
+
+      - name: Validate SQL deployment scripts
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f MASTER_DEPLOY.sql
+          echo "Checking MASTER_DEPLOY.sql structure..."
+          grep -q "CREATE DATABASE\|IF DB_ID" MASTER_DEPLOY.sql
+          grep -q "CREATE TABLE" MASTER_DEPLOY.sql
+          grep -q "CREATE OR ALTER PROCEDURE\|CREATE PROCEDURE" MASTER_DEPLOY.sql
+          grep -q "CREATE TRIGGER\|CREATE OR ALTER TRIGGER\|CREATE TRIGGER" MASTER_DEPLOY.sql
+          grep -q "CREATE NONCLUSTERED INDEX\|CREATE INDEX" MASTER_DEPLOY.sql
+          grep -q "GO" MASTER_DEPLOY.sql
+
+          echo "Checking critical Task 2/3 objects..."
+          grep -q "sp_EmployeeLeaveSummary\|sp_DepartmentWiseLeaveStatistics" MASTER_DEPLOY.sql
+          grep -q "sp_LeaveTrendAnalysis\|sp_ForecastLeaveUtilization" MASTER_DEPLOY.sql
+          grep -q "trg_LeaveRequests_Audit\|trg_Employees_Audit" MASTER_DEPLOY.sql
+          grep -q "AuditLogs" MASTER_DEPLOY.sql
+
+          echo "Checking Task patch scripts exist..."
+          test -f Scripts/Database/Task2_Report_EmployeeName_Filter.sql
+          test -f Scripts/Database/Task3_Users_Audit_Trigger.sql
+          test -f Scripts/Database/Task3_Analytics_Response_Fixes.sql
+
+          echo "SQL deployment script validation passed."

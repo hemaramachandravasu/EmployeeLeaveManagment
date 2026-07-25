@@ -1,0 +1,4 @@
+EmployeeCode,EmployeeName,Department,LeaveType,StartDate,EndDate,TotalDays,Status
+EMP001,Alice Johnson,Engineering,Annual Leave,2026-01-10,2026-01-12,3,Approved
+EMP002,Bob Smith,Engineering,Sick Leave,2026-02-05,2026-02-06,2,Approved
+EMP003,Carol Lee,Human Resources,Casual Leave,2026-03-01,2026-03-01,1,Pending

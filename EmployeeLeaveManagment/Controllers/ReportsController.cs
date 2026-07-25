@@ -76,9 +76,12 @@ public class ReportController : ControllerBase
     }
 
     [HttpGet("pending")]
-    public async Task<IActionResult> GetPendingLeaveRequests()
+    public async Task<IActionResult> GetPendingLeaveRequests([FromQuery] ReportFilterDto filter)
     {
-        var result = await _reportService.GetPendingLeaveRequestsAsync();
+        var error = ReportFilterValidator.Validate(filter, requireBody: false);
+        if (error != null) return BadRequest(new { Message = error });
+
+        var result = await _reportService.GetPendingLeaveRequestsAsync(filter);
         return Ok(result);
     }
 

@@ -1,7 +1,8 @@
 ﻿using EmployeeLeaveManagment.DTOs;
+using EmployeeLeaveManagment.Helpers;
 using EmployeeLeaveManagment.Services;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 
 namespace EmployeeLeaveManagment.Controllers
 {
@@ -23,116 +24,206 @@ namespace EmployeeLeaveManagment.Controllers
             return Ok(result);
         }
 
-        [HttpGet("{id}")]
+        [HttpGet("{id:int}")]
         public async Task<IActionResult> GetLeaveById(int id)
         {
-            var result = await _leaveService.GetLeaveByIdAsync(id);
+            if (id <= 0)
+                return BadRequest(new { Message = "id must be a positive integer." });
 
-            if (result == null)
-                return NotFound();
+            try
+            {
+                var result = await _leaveService.GetLeaveByIdAsync(id);
 
-            return Ok(result);
+                if (result == null)
+                    return NotFound(new { Message = $"Leave request {id} was not found." });
+
+                return Ok(result);
+            }
+            catch (SqlException ex)
+            {
+                return DatabaseError(ex);
+            }
         }
 
         [HttpPost]
         public async Task<IActionResult> ApplyLeave([FromBody] LeaveRequestDto? leaveRequest)
         {
-            if (leaveRequest == null)
-                return BadRequest(new { Message = "Leave request body is required." });
+            string? validationError = LeaveRequestValidator.ValidateApply(leaveRequest);
+            if (validationError != null)
+                return BadRequest(new { Message = validationError });
 
             if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+                return ValidationProblem(ModelState);
 
-            if (leaveRequest.EmployeeId <= 0 || leaveRequest.LeaveTypeId <= 0)
-                return BadRequest(new { Message = "EmployeeId and LeaveTypeId must be valid positive values." });
+            try
+            {
+                var result = await _leaveService.ApplyLeaveAsync(leaveRequest!);
 
-            if (leaveRequest.StartDate == default || leaveRequest.EndDate == default || leaveRequest.StartDate > leaveRequest.EndDate)
-                return BadRequest(new { Message = "Invalid leave dates. StartDate must be before or equal to EndDate." });
+                if (result > 0)
+                    return Ok(new { Message = "Leave applied successfully.", LeaveRequestId = result });
 
-            var result = await _leaveService.ApplyLeaveAsync(leaveRequest);
-
-            if (result > 0)
-                return Ok(new { Message = "Leave applied successfully.", LeaveRequestId = result });
-
-            return BadRequest(new { Message = "Unable to apply leave request. Verify input values and employee/leavetype exist." });
+                return BadRequest(new { Message = LeaveRequestValidator.MapApplyResult(result) });
+            }
+            catch (SqlException ex)
+            {
+                return DatabaseError(ex);
+            }
         }
 
         [HttpPut]
-        public async Task<IActionResult> UpdateLeave([FromBody] LeaveRequestDto leaveRequest)
+        public async Task<IActionResult> UpdateLeave([FromBody] LeaveRequestDto? leaveRequest)
         {
-            var result = await _leaveService.UpdateLeaveAsync(leaveRequest);
+            string? validationError = LeaveRequestValidator.ValidateUpdate(leaveRequest);
+            if (validationError != null)
+                return BadRequest(new { Message = validationError });
 
-            if (result > 0)
-                return Ok(new { Message = "Leave updated successfully." });
+            if (!ModelState.IsValid)
+                return ValidationProblem(ModelState);
 
-            return BadRequest();
+            try
+            {
+                var result = await _leaveService.UpdateLeaveAsync(leaveRequest!);
+
+                if (result > 0)
+                    return Ok(new { Message = "Leave updated successfully." });
+
+                return BadRequest(new { Message = LeaveRequestValidator.MapUpdateResult(result) });
+            }
+            catch (SqlException ex)
+            {
+                return DatabaseError(ex);
+            }
         }
-        [HttpDelete("{id}")]
+
+        [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteLeave(int id)
         {
-            var result = await _leaveService.DeleteLeaveAsync(id);
+            if (id <= 0)
+                return BadRequest(new { Message = "id must be a positive integer." });
 
-            if (result > 0)
-                return Ok(new { Message = "Leave deleted successfully." });
+            try
+            {
+                var result = await _leaveService.DeleteLeaveAsync(id);
 
-            return BadRequest(new { Message = "Unable to delete leave request." });
+                if (result > 0)
+                    return Ok(new { Message = "Leave cancelled successfully." });
+
+                if (result == -1)
+                    return NotFound(new { Message = $"Leave request {id} was not found." });
+
+                return BadRequest(new { Message = "Unable to cancel leave request." });
+            }
+            catch (SqlException ex)
+            {
+                return DatabaseError(ex);
+            }
         }
 
-        [HttpPut("approve/{leaveRequestId}")]
+        [HttpPut("approve/{leaveRequestId:int}")]
         public async Task<IActionResult> ApproveLeave(
             int leaveRequestId,
             [FromQuery] int? approvedBy,
             [FromQuery] string? remarks)
         {
-            if (!approvedBy.HasValue || approvedBy.Value <= 0)
-                return BadRequest(new { Message = "approvedBy query parameter is required and must be a valid employee id." });
+            string? validationError = LeaveRequestValidator.ValidateApproval(leaveRequestId, approvedBy);
+            if (validationError != null)
+                return BadRequest(new { Message = validationError });
 
-            var result = await _leaveService.ApproveLeaveAsync(
-                leaveRequestId,
-                approvedBy.Value,
-                remarks ?? string.Empty);
+            if (remarks is { Length: > 500 })
+                return BadRequest(new { Message = "Remarks cannot exceed 500 characters." });
 
-            if (result > 0)
-                return Ok(new { Message = "Leave approved successfully." });
+            try
+            {
+                var result = await _leaveService.ApproveLeaveAsync(
+                    leaveRequestId,
+                    approvedBy!.Value,
+                    remarks ?? string.Empty);
 
-            return BadRequest(new { Message = "Unable to approve leave request. Verify leave request id and approvedBy employee id." });
+                if (result > 0)
+                {
+                    var leave = await _leaveService.GetLeaveByIdAsync(leaveRequestId);
+                    return Ok(new
+                    {
+                        Message = "Leave approved successfully.",
+                        Leave = leave
+                    });
+                }
+
+                return BadRequest(new { Message = LeaveRequestValidator.MapApprovalResult(result, "approved") });
+            }
+            catch (SqlException ex)
+            {
+                return DatabaseError(ex);
+            }
         }
 
-        [HttpPut("reject/{leaveRequestId}")]
+        [HttpPut("reject/{leaveRequestId:int}")]
         public async Task<IActionResult> RejectLeave(
             int leaveRequestId,
             [FromQuery] int? approvedBy,
             [FromQuery] string? remarks)
         {
-            if (!approvedBy.HasValue || approvedBy.Value <= 0)
-                return BadRequest(new { Message = "approvedBy query parameter is required and must be a valid employee id." });
+            string? validationError = LeaveRequestValidator.ValidateApproval(leaveRequestId, approvedBy);
+            if (validationError != null)
+                return BadRequest(new { Message = validationError });
 
-            var result = await _leaveService.RejectLeaveAsync(
-                leaveRequestId,
-                approvedBy.Value,
-                remarks ?? string.Empty);
+            if (remarks is { Length: > 500 })
+                return BadRequest(new { Message = "Remarks cannot exceed 500 characters." });
 
-            if (result > 0)
-                return Ok(new { Message = "Leave rejected successfully." });
+            try
+            {
+                var result = await _leaveService.RejectLeaveAsync(
+                    leaveRequestId,
+                    approvedBy!.Value,
+                    remarks ?? string.Empty);
 
-            return BadRequest(new { Message = "Unable to reject leave request. Verify leave request id and approvedBy employee id." });
+                if (result > 0)
+                {
+                    var leave = await _leaveService.GetLeaveByIdAsync(leaveRequestId);
+                    return Ok(new
+                    {
+                        Message = "Leave rejected successfully.",
+                        Leave = leave
+                    });
+                }
+
+                return BadRequest(new { Message = LeaveRequestValidator.MapApprovalResult(result, "rejected") });
+            }
+            catch (SqlException ex)
+            {
+                return DatabaseError(ex);
+            }
         }
 
-        [HttpGet("employee/{employeeId}")]
+        [HttpGet("employee/{employeeId:int}")]
         public async Task<IActionResult> GetLeavesByEmployee(int employeeId)
         {
             if (employeeId <= 0)
                 return BadRequest(new { Message = "employeeId must be a positive integer." });
 
-            var result = await _leaveService.GetLeavesByEmployeeAsync(employeeId);
-            return Ok(result);
+            try
+            {
+                var result = await _leaveService.GetLeavesByEmployeeAsync(employeeId);
+                return Ok(result);
+            }
+            catch (SqlException ex)
+            {
+                return DatabaseError(ex);
+            }
         }
 
         [HttpGet("pending")]
         public async Task<IActionResult> GetPendingLeaves()
         {
-            var result = await _leaveService.GetPendingLeavesAsync();
-            return Ok(result);
+            try
+            {
+                var result = await _leaveService.GetPendingLeavesAsync();
+                return Ok(result);
+            }
+            catch (SqlException ex)
+            {
+                return DatabaseError(ex);
+            }
         }
 
         [HttpGet("daterange")]
@@ -146,8 +237,28 @@ namespace EmployeeLeaveManagment.Controllers
             if (fromDate > toDate)
                 return BadRequest(new { Message = "fromDate must be on or before toDate." });
 
-            var result = await _leaveService.GetLeavesByDateRangeAsync(fromDate.Value, toDate.Value);
-            return Ok(result);
+            try
+            {
+                var result = await _leaveService.GetLeavesByDateRangeAsync(fromDate.Value, toDate.Value);
+                return Ok(result);
+            }
+            catch (SqlException ex)
+            {
+                return DatabaseError(ex);
+            }
+        }
+
+        private ObjectResult DatabaseError(SqlException ex)
+        {
+            var pd = new ProblemDetails
+            {
+                Title = "Database error",
+                Detail = ex.Message,
+                Status = StatusCodes.Status500InternalServerError,
+                Type = "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+            };
+
+            return StatusCode(StatusCodes.Status500InternalServerError, pd);
         }
     }
 }

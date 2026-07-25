@@ -28,9 +28,17 @@ public class ReportFilterValidatorTests
     }
 
     [Fact]
-    public void Validate_ReturnsNull_ForValidFilter()
+    public void Validate_ReturnsError_WhenEmployeeNameTooLong()
     {
-        var filter = new ReportFilterDto { Year = 2026, FromDate = new DateTime(2026, 1, 1), ToDate = new DateTime(2026, 12, 31) };
+        var filter = new ReportFilterDto { EmployeeName = new string('A', 251) };
+        var error = ReportFilterValidator.Validate(filter, requireBody: false);
+        Assert.Equal("EmployeeName cannot exceed 250 characters.", error);
+    }
+
+    [Fact]
+    public void Validate_ReturnsNull_ForValidEmployeeName()
+    {
+        var filter = new ReportFilterDto { EmployeeName = "Alice" };
         Assert.Null(ReportFilterValidator.Validate(filter, requireBody: false));
     }
 }

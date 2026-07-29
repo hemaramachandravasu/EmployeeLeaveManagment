@@ -1,0 +1,3 @@
+ValidationId,RunId,CheckCode,Severity,EntityName,EntityKey,ValidationDetail,DetectedAt,IsResolved,ResolvedAt,ResolvedBy
+201,8,BALANCE_MISMATCH,High,LeaveBalances,8,UsedDays=5.00 vs approved=8.00,2026-07-29T05:30:02Z,False,,
+202,8,INVALID_REFERENCE,Medium,LeaveRequests,99,Status 'Hold' is not in Meta_LookupValue LEAVE_STATUS,2026-07-29T05:30:05Z,True,2026-07-29T09:00:00Z,admin

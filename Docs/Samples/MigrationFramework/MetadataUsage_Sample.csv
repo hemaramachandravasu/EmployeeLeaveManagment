@@ -1,0 +1,5 @@
+MetaType,Code,Name,IsActive,CreatedAt
+Module,LEAVE,Leave Management,True,2026-07-29T10:00:00Z
+Module,MIGRATION,Migration Framework,True,2026-07-29T10:00:00Z
+ConfigCategory,LEAVE_POLICY,Leave Policy Settings,True,2026-07-29T10:00:00Z
+AuditCategory,MIGRATION,Schema Migration,True,2026-07-29T10:00:00Z

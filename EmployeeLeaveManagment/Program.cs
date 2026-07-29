@@ -118,6 +118,8 @@ builder.Services.AddScoped<IAuditIntegrityRepository, AuditIntegrityRepository>(
 builder.Services.AddScoped<IAuditIntegrityService, AuditIntegrityService>();
 builder.Services.AddScoped<ICapacityPerformanceRepository, CapacityPerformanceRepository>();
 builder.Services.AddScoped<ICapacityPerformanceService, CapacityPerformanceService>();
+builder.Services.AddScoped<IMigrationFrameworkRepository, MigrationFrameworkRepository>();
+builder.Services.AddScoped<IMigrationFrameworkService, MigrationFrameworkService>();
 builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
 builder.Services.AddScoped<IEmployeeService, EmployeeService>();
 

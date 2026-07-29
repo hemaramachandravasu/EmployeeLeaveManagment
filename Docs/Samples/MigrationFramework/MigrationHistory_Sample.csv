@@ -1,0 +1,3 @@
+MigrationId,VersionNumber,MigrationName,ScriptName,Status,AppliedAt,AppliedBy,DurationMs,ErrorMessage,Notes
+1,0001.0000,Baseline — Migration Framework installed,MIGRATION_FRAMEWORK_MASTER_DEPLOY.sql,Applied,2026-07-29T10:00:00Z,dbo,15,,Baseline marker
+2,0001.0001,Add Meta_SystemSetting table,sp_Mig_ApplySample_0001_0001,Applied,2026-07-29T10:05:00Z,dbo,42,,Sample incremental migration
